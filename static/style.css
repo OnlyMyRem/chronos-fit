@@ -304,6 +304,11 @@ select:focus {
   color: var(--done);
 }
 
+.item.done .ctext {
+  color: var(--done);
+  text-decoration: line-through;
+}
+
 /* ---------- Dashboard layout ---------- */
 .dashboard {
   display: flex;

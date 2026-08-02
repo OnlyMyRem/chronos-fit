@@ -203,6 +203,7 @@ def save_plan(payload: PlanPayload):
             (name, json.dumps(items, ensure_ascii=False),
              datetime.now(BEIJING_TZ).isoformat()),
         )
+        conn.commit()
     return {"ok": True, "name": name}
 
 
@@ -212,6 +213,7 @@ def delete_plan(name: str = Query(...)):
         cur = conn.execute("DELETE FROM plans WHERE plan_name = ?", (name,))
         if cur.rowcount == 0:
             raise HTTPException(status_code=404, detail="Plan not found")
+        conn.commit()
     return {"ok": True, "name": name}
 
 
@@ -246,6 +248,7 @@ def toggle_item(payload: TogglePayload):
             """,
             (payload.log_date, payload.schedule_type, payload.item_name, is_completed),
         )
+        conn.commit()
     return {"ok": True, "log_date": payload.log_date, "item_name": payload.item_name,
             "is_completed": is_completed}
 
@@ -272,6 +275,7 @@ def custom_add(payload: CustomItemPayload):
             "VALUES (?, ?, ?)",
             (payload.log_date, item_name, datetime.now(BEIJING_TZ).isoformat()),
         )
+        conn.commit()
     return {"ok": True, "log_date": payload.log_date, "item_name": item_name}
 
 
@@ -284,6 +288,7 @@ def custom_toggle(payload: CustomTogglePayload):
             "WHERE log_date = ? AND item_name = ?",
             (is_completed, payload.log_date, payload.item_name),
         )
+        conn.commit()
     return {"ok": True, "item_name": payload.item_name, "is_completed": is_completed}
 
 
@@ -294,6 +299,7 @@ def custom_delete(log_date: str = Query(...), item_name: str = Query(...)):
             "DELETE FROM custom_items WHERE log_date = ? AND item_name = ?",
             (log_date, item_name),
         )
+        conn.commit()
     return {"ok": True, "log_date": log_date, "item_name": item_name}
 
 
@@ -319,6 +325,7 @@ def meals_add(payload: MealItemPayload):
             "VALUES (?, ?, ?, ?)",
             (payload.log_date, payload.meal, item_name, datetime.now(BEIJING_TZ).isoformat()),
         )
+        conn.commit()
     return {"ok": True, "log_date": payload.log_date, "meal": payload.meal,
             "item_name": item_name}
 
@@ -332,6 +339,7 @@ def meals_toggle(payload: MealTogglePayload):
             "WHERE log_date = ? AND meal = ? AND item_name = ?",
             (is_completed, payload.log_date, payload.meal, payload.item_name),
         )
+        conn.commit()
     return {"ok": True, "item_name": payload.item_name, "is_completed": is_completed}
 
 
@@ -343,6 +351,7 @@ def meals_delete(log_date: str = Query(...), meal: str = Query(...),
             "DELETE FROM meal_items WHERE log_date = ? AND meal = ? AND item_name = ?",
             (log_date, meal, item_name),
         )
+        conn.commit()
     return {"ok": True, "log_date": log_date, "meal": meal, "item_name": item_name}
 
 
