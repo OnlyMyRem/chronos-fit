@@ -98,6 +98,19 @@ def init_db():
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS meal_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                log_date TEXT NOT NULL,
+                meal TEXT NOT NULL,
+                item_name TEXT NOT NULL,
+                is_completed INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL,
+                UNIQUE (log_date, meal, item_name)
+            )
+            """
+        )
 
 
 init_db()
@@ -117,6 +130,19 @@ class CustomItemPayload(BaseModel):
 
 class CustomTogglePayload(BaseModel):
     log_date: str
+    item_name: str
+    is_completed: bool
+
+
+class MealItemPayload(BaseModel):
+    log_date: str
+    meal: str
+    item_name: str
+
+
+class MealTogglePayload(BaseModel):
+    log_date: str
+    meal: str
     item_name: str
     is_completed: bool
 
@@ -212,6 +238,55 @@ def custom_delete(log_date: str = Query(...), item_name: str = Query(...)):
             (log_date, item_name),
         )
     return {"ok": True, "log_date": log_date, "item_name": item_name}
+
+
+@app.get("/api/meals/logs")
+def meals_logs(log_date: str = Query(..., description="Date in YYYY-MM-DD (Beijing)")):
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT meal, item_name, is_completed FROM meal_items "
+            "WHERE log_date = ? ORDER BY id",
+            (log_date,),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+@app.post("/api/meals/add")
+def meals_add(payload: MealItemPayload):
+    item_name = payload.item_name.strip()
+    if not item_name:
+        raise HTTPException(status_code=400, detail="Item name cannot be empty")
+    with get_conn() as conn:
+        conn.execute(
+            "INSERT OR IGNORE INTO meal_items (log_date, meal, item_name, created_at) "
+            "VALUES (?, ?, ?, ?)",
+            (payload.log_date, payload.meal, item_name, datetime.now(BEIJING_TZ).isoformat()),
+        )
+    return {"ok": True, "log_date": payload.log_date, "meal": payload.meal,
+            "item_name": item_name}
+
+
+@app.post("/api/meals/toggle")
+def meals_toggle(payload: MealTogglePayload):
+    is_completed = 1 if payload.is_completed else 0
+    with get_conn() as conn:
+        conn.execute(
+            "UPDATE meal_items SET is_completed = ? "
+            "WHERE log_date = ? AND meal = ? AND item_name = ?",
+            (is_completed, payload.log_date, payload.meal, payload.item_name),
+        )
+    return {"ok": True, "item_name": payload.item_name, "is_completed": is_completed}
+
+
+@app.delete("/api/meals")
+def meals_delete(log_date: str = Query(...), meal: str = Query(...),
+                 item_name: str = Query(...)):
+    with get_conn() as conn:
+        conn.execute(
+            "DELETE FROM meal_items WHERE log_date = ? AND meal = ? AND item_name = ?",
+            (log_date, meal, item_name),
+        )
+    return {"ok": True, "log_date": log_date, "meal": meal, "item_name": item_name}
 
 
 @app.get("/api/export-logs")

@@ -1,13 +1,13 @@
 :root {
-  --bg: #0f172a;
-  --panel: #1e293b;
-  --panel-2: #273449;
-  --border: #334155;
-  --text: #e2e8f0;
-  --muted: #94a3b8;
+  --bg: #000000;
+  --panel: #0d0d0d;
+  --panel-2: #161616;
+  --border: #2b2b2b;
+  --text: #ffffff;
+  --muted: #9ca3af;
   --accent: #38bdf8;
   --accent-dim: rgba(56, 189, 248, 0.14);
-  --done: #475569;
+  --done: #525252;
   --danger: #f87171;
 }
 
@@ -533,6 +533,44 @@ li.item.add-row {
   color: var(--danger);
 }
 
+/* ---------- Meals ---------- */
+.meals-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 22px 24px;
+  margin-top: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+}
+
+.meals-card .card-head h1 {
+  font-size: 1.15rem;
+}
+
+.meals-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.meals-col {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.meal-head {
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--text);
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 900px) {
   .dashboard {
@@ -541,6 +579,10 @@ li.item.add-row {
 
   .metronome-card {
     width: 100%;
+  }
+
+  .meals-grid {
+    grid-template-columns: 1fr;
   }
 }
 

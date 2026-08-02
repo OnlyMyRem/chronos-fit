@@ -318,6 +318,150 @@
     return li;
   }
 
+  // ---------- Meals ----------
+  const MEALS = [
+    { key: "breakfast", label: "早餐" },
+    { key: "lunch", label: "午餐" },
+    { key: "dinner", label: "晚餐" },
+  ];
+
+  async function loadMeals() {
+    if (!loaded) return;
+    const res = await fetch(`/api/meals/logs?log_date=${encodeURIComponent(currentDate)}`);
+    const logs = await res.json();
+    $("meals-date").textContent = currentDate;
+    MEALS.forEach((m) => {
+      const box = document.querySelector(`.meals-col[data-meal="${m.key}"] ul`);
+      box.innerHTML = "";
+      logs.filter((l) => l.meal === m.key)
+        .forEach((l) => box.append(makeMealLi(m.key, l.item_name, l.is_completed === 1)));
+      box.append(makeMealAddRow(m.key));
+    });
+  }
+
+  function makeMealLi(meal, name, done) {
+    const li = document.createElement("li");
+    li.className = "item" + (done ? " done" : "");
+
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = done;
+
+    const inp = document.createElement("input");
+    inp.type = "text";
+    inp.className = "ctext";
+    inp.value = name;
+    inp.maxLength = 120;
+
+    const del = document.createElement("button");
+    del.type = "button";
+    del.className = "del";
+    del.title = "删除";
+    del.textContent = "\u2715";
+
+    li.append(cb, inp, del);
+
+    cb.addEventListener("change", async () => {
+      cb.disabled = true;
+      try {
+        const r = await fetch("/api/meals/toggle", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ log_date: currentDate, meal, item_name: name, is_completed: cb.checked }),
+        });
+        if (!r.ok) throw new Error(await r.text());
+        li.classList.toggle("done", cb.checked);
+        setStatus(`Saved ${new Date().toLocaleTimeString()}`);
+      } catch (err) {
+        cb.checked = !cb.checked;
+        setStatus("Save failed — please retry", "error");
+      } finally {
+        cb.disabled = false;
+      }
+    });
+
+    inp.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        inp.blur();
+      }
+    });
+    inp.addEventListener("change", () => renameMealItem(meal, name, li));
+
+    del.addEventListener("click", async () => {
+      await fetch(
+        `/api/meals?log_date=${encodeURIComponent(currentDate)}&meal=${encodeURIComponent(meal)}&item_name=${encodeURIComponent(name)}`,
+        { method: "DELETE" }
+      );
+      loadMeals();
+    });
+
+    return li;
+  }
+
+  async function renameMealItem(meal, oldName, li) {
+    const inp = li.querySelector(".ctext");
+    const name = inp.value.trim();
+    const done = li.classList.contains("done");
+    if (!name) {
+      inp.value = oldName;
+      return;
+    }
+    if (name === oldName) return;
+    const headers = { "Content-Type": "application/json" };
+    await fetch("/api/meals/add", {
+      method: "POST", headers,
+      body: JSON.stringify({ log_date: currentDate, meal, item_name: name }),
+    });
+    if (done) {
+      await fetch("/api/meals/toggle", {
+        method: "POST", headers,
+        body: JSON.stringify({ log_date: currentDate, meal, item_name: name, is_completed: true }),
+      });
+    }
+    await fetch(
+      `/api/meals?log_date=${encodeURIComponent(currentDate)}&meal=${encodeURIComponent(meal)}&item_name=${encodeURIComponent(oldName)}`,
+      { method: "DELETE" }
+    );
+    loadMeals();
+  }
+
+  function makeMealAddRow(meal) {
+    const li = document.createElement("li");
+    li.className = "item add-row";
+
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.disabled = true;
+
+    const inp = document.createElement("input");
+    inp.type = "text";
+    inp.className = "ctext";
+    inp.placeholder = "点此添加…";
+    inp.maxLength = 120;
+
+    li.append(cb, inp);
+
+    inp.addEventListener("keydown", async (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const name = inp.value.trim();
+        if (!name) return;
+        const res = await fetch("/api/meals/add", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ log_date: currentDate, meal, item_name: name }),
+        });
+        if (!res.ok) return;
+        loadMeals();
+      } else if (e.key === "Escape") {
+        inp.value = "";
+      }
+    });
+
+    return li;
+  }
+
   // ---------- Today ----------
   function goToday() {
     const todayParts = bjParts();
@@ -331,6 +475,7 @@
     renderPlan();
     loadLogs();
     loadCustom();
+    loadMeals();
   }
 
   // ---------- Metronome ----------
@@ -469,6 +614,7 @@
     loaded = true;
     loadLogs();
     loadCustom();
+    loadMeals();
 
     $("fullscreen-btn").addEventListener("click", toggleFullscreen);
     $("today-btn").addEventListener("click", goToday);
@@ -514,6 +660,7 @@
       }
       loadLogs();
       loadCustom();
+      loadMeals();
     });
 
     $("plan-select").addEventListener("change", (e) => {
