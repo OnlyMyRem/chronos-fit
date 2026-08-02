@@ -229,4 +229,4 @@ def export_logs(api_key: str | None = Query(default=None)):
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=False)
+    uvicorn.run("main:app", host="0.0.0.0", port=18000, reload=False)
