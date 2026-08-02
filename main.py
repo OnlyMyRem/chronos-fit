@@ -86,6 +86,18 @@ def init_db():
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS custom_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                log_date TEXT NOT NULL,
+                item_name TEXT NOT NULL,
+                is_completed INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL,
+                UNIQUE (log_date, item_name)
+            )
+            """
+        )
 
 
 init_db()
@@ -94,6 +106,17 @@ init_db()
 class TogglePayload(BaseModel):
     log_date: str
     schedule_type: str
+    item_name: str
+    is_completed: bool
+
+
+class CustomItemPayload(BaseModel):
+    log_date: str
+    item_name: str
+
+
+class CustomTogglePayload(BaseModel):
+    log_date: str
     item_name: str
     is_completed: bool
 
@@ -142,6 +165,53 @@ def toggle_item(payload: TogglePayload):
         )
     return {"ok": True, "log_date": payload.log_date, "item_name": payload.item_name,
             "is_completed": is_completed}
+
+
+@app.get("/api/custom/logs")
+def custom_logs(log_date: str = Query(..., description="Date in YYYY-MM-DD (Beijing)")):
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT item_name, is_completed FROM custom_items "
+            "WHERE log_date = ? ORDER BY id",
+            (log_date,),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+@app.post("/api/custom/add")
+def custom_add(payload: CustomItemPayload):
+    item_name = payload.item_name.strip()
+    if not item_name:
+        raise HTTPException(status_code=400, detail="Item name cannot be empty")
+    with get_conn() as conn:
+        conn.execute(
+            "INSERT OR IGNORE INTO custom_items (log_date, item_name, created_at) "
+            "VALUES (?, ?, ?)",
+            (payload.log_date, item_name, datetime.now(BEIJING_TZ).isoformat()),
+        )
+    return {"ok": True, "log_date": payload.log_date, "item_name": item_name}
+
+
+@app.post("/api/custom/toggle")
+def custom_toggle(payload: CustomTogglePayload):
+    is_completed = 1 if payload.is_completed else 0
+    with get_conn() as conn:
+        conn.execute(
+            "UPDATE custom_items SET is_completed = ? "
+            "WHERE log_date = ? AND item_name = ?",
+            (is_completed, payload.log_date, payload.item_name),
+        )
+    return {"ok": True, "item_name": payload.item_name, "is_completed": is_completed}
+
+
+@app.delete("/api/custom")
+def custom_delete(log_date: str = Query(...), item_name: str = Query(...)):
+    with get_conn() as conn:
+        conn.execute(
+            "DELETE FROM custom_items WHERE log_date = ? AND item_name = ?",
+            (log_date, item_name),
+        )
+    return {"ok": True, "log_date": log_date, "item_name": item_name}
 
 
 @app.get("/api/export-logs")

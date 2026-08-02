@@ -141,6 +141,29 @@ select:focus {
   filter: brightness(1.1);
 }
 
+.date-wrap {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+#today-btn {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: border-color 0.15s ease;
+  white-space: nowrap;
+}
+
+#today-btn:hover {
+  border-color: var(--accent);
+}
+
 /* ---------- Workout card ---------- */
 .workout-card {
   background: var(--panel);
@@ -253,6 +276,252 @@ select:focus {
   color: var(--done);
 }
 
+/* ---------- Dashboard layout ---------- */
+.dashboard {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.dashboard .workout-card {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---------- Metronome card ---------- */
+.metronome-card {
+  flex: none;
+  width: 270px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.metronome-card h1 {
+  font-size: 1.05rem;
+}
+
+.meta {
+  font-size: 0.8rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.meta.running {
+  color: var(--accent);
+}
+
+.presets {
+  display: flex;
+  gap: 8px;
+}
+
+.presets button {
+  flex: 1;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.presets button:hover {
+  border-color: var(--accent);
+}
+
+.presets button.active {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.count {
+  font-size: 3.4rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  text-align: center;
+  line-height: 1.1;
+  text-shadow: 0 0 30px var(--accent-dim);
+}
+
+.custom-dur {
+  display: flex;
+  gap: 8px;
+}
+
+.custom-dur input {
+  flex: 1;
+  min-width: 0;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.custom-dur input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.metro-toggle {
+  background: var(--accent);
+  border: none;
+  color: #06121f;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 12px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: filter 0.15s ease;
+}
+
+.metro-toggle:hover {
+  filter: brightness(1.1);
+}
+
+.metro-toggle.active {
+  background: var(--danger);
+  color: #fff;
+}
+
+.metro-note {
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* ---------- Custom section ---------- */
+.custom-section {
+  margin-top: 18px;
+  border-top: 1px dashed var(--border);
+  padding-top: 14px;
+}
+
+.custom-head h2 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+#custom-items:empty::before {
+  content: "还没有自定义项目";
+  display: block;
+  padding: 10px 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.item.custom {
+  padding: 10px 6px;
+  opacity: 0.95;
+}
+
+.item .del {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.item .del:hover {
+  background: rgba(248, 113, 113, 0.15);
+  color: var(--danger);
+}
+
+.custom-add {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.custom-add input {
+  flex: 1;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  outline: none;
+  min-width: 0;
+}
+
+.custom-add input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+#custom-add-btn {
+  background: var(--accent);
+  border: none;
+  color: #06121f;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: filter 0.15s ease;
+}
+
+#custom-add-btn:hover {
+  filter: brightness(1.1);
+}
+
+/* ---------- Fullscreen hint ---------- */
+#fullscreen-hint {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%) translateY(16px);
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 9px 16px;
+  border-radius: 999px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  z-index: 100;
+}
+
+#fullscreen-hint.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+#fullscreen-hint kbd {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  padding: 1px 6px;
+  font-size: 0.75rem;
+  color: var(--text);
+}
+
 /* ---------- Footer ---------- */
 .foot {
   width: 100%;
@@ -282,6 +551,16 @@ select:focus {
 }
 
 /* ---------- Responsive ---------- */
+@media (max-width: 900px) {
+  .dashboard {
+    flex-direction: column;
+  }
+
+  .metronome-card {
+    width: 100%;
+  }
+}
+
 @media (max-width: 600px) {
   body {
     padding: 16px 12px 28px;
@@ -303,7 +582,8 @@ select:focus {
     font-size: 1rem;
   }
 
-  #fullscreen-btn {
+  #fullscreen-btn,
+  #today-btn {
     width: 100%;
   }
 }
