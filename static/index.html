@@ -30,7 +30,10 @@
       </label>
       <label class="field grow">
         <span class="field-label">Plan</span>
-        <select id="plan-select"></select>
+        <div class="plan-wrap">
+          <select id="plan-select"></select>
+          <button id="plan-edit-btn" type="button" title="添加或修改计划">✏ 编辑</button>
+        </div>
       </label>
       <button id="fullscreen-btn" title="Toggle fullscreen">⛶ Fullscreen</button>
     </div>
@@ -92,6 +95,26 @@
   </main>
 
   <div id="fullscreen-hint">已进入全屏 · 按 <kbd>Esc</kbd> 或 <kbd>F11</kbd> 退出全屏</div>
+
+<dialog id="plan-modal">
+  <form method="dialog" class="plan-form">
+    <div class="modal-head">
+      <h2>添加 / 修改计划</h2>
+      <button type="button" id="plan-close" class="modal-close" aria-label="关闭">✕</button>
+    </div>
+    <label class="field">
+      <span class="field-label">计划名称</span>
+      <input type="text" id="plan-name" maxlength="80" placeholder="输入计划名称" />
+    </label>
+    <span class="field-label">计划项目</span>
+    <div id="plan-edit-items"></div>
+    <button type="button" id="plan-add-item" class="secondary">＋ 添加项目</button>
+    <div class="modal-actions">
+      <button type="button" id="plan-delete" class="danger">删除此计划</button>
+      <button type="button" id="plan-save" class="primary">保存</button>
+    </div>
+  </form>
+</dialog>
 
   <footer class="foot">
     <span id="save-status"></span>

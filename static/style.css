@@ -164,6 +164,34 @@ select:focus {
   border-color: var(--accent);
 }
 
+.plan-wrap {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.plan-wrap select {
+  flex: 1;
+  min-width: 0;
+}
+
+#plan-edit-btn {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  transition: border-color 0.15s ease;
+}
+
+#plan-edit-btn:hover {
+  border-color: var(--accent);
+}
+
 /* ---------- Workout card ---------- */
 .workout-card {
   background: var(--panel);
@@ -469,6 +497,150 @@ li.item.add-row {
 .item .del:hover {
   background: rgba(248, 113, 113, 0.15);
   color: var(--danger);
+}
+
+#custom-items {
+  border-top: 1px dashed var(--border);
+  margin-top: 10px;
+  padding-top: 10px;
+}
+
+/* ---------- Plan modal ---------- */
+.plan-modal {
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 22px 24px;
+  width: min(480px, 92vw);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+.plan-modal::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.plan-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-head h2 {
+  font-size: 1.1rem;
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.modal-close:hover {
+  color: var(--text);
+}
+
+.plan-form input[type="text"] {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  outline: none;
+  width: 100%;
+}
+
+.plan-form input[type="text"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+#plan-edit-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pedit-row {
+  display: flex;
+  gap: 8px;
+}
+
+.pedit-row input {
+  flex: 1;
+}
+
+.plan-form .row-rm {
+  flex: none;
+  width: 38px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.plan-form .row-rm:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.plan-form button.secondary,
+.plan-form button.primary,
+.plan-form button.danger {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.92rem;
+}
+
+.plan-form button.secondary {
+  background: var(--panel-2);
+  color: var(--text);
+}
+
+.plan-form button.secondary:hover {
+  border-color: var(--accent);
+}
+
+.plan-form button.primary {
+  background: var(--accent);
+  color: #06121f;
+  border-color: var(--accent);
+}
+
+.plan-form button.primary:hover {
+  filter: brightness(1.1);
+}
+
+.plan-form button.danger {
+  background: transparent;
+  color: var(--danger);
+  border-color: var(--border);
+  margin-right: auto;
+}
+
+.plan-form button.danger:hover {
+  border-color: var(--danger);
 }
 
 /* ---------- Fullscreen hint ---------- */

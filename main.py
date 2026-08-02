@@ -1,5 +1,6 @@
 """ChronosFit - fullscreen clock & workout check-in dashboard (FastAPI + SQLite)."""
 
+import json
 import os
 import sqlite3
 from datetime import datetime, timedelta, timezone
@@ -111,6 +112,23 @@ def init_db():
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS plans (
+                plan_name TEXT PRIMARY KEY,
+                items TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+            """
+        )
+        count = conn.execute("SELECT COUNT(*) AS c FROM plans").fetchone()["c"]
+        if count == 0:
+            now = datetime.now(BEIJING_TZ).isoformat()
+            for name, items in PLANS.items():
+                conn.execute(
+                    "INSERT INTO plans (plan_name, items, updated_at) VALUES (?, ?, ?)",
+                    (name, json.dumps(items, ensure_ascii=False), now),
+                )
 
 
 init_db()
@@ -147,20 +165,59 @@ class MealTogglePayload(BaseModel):
     is_completed: bool
 
 
-@app.get("/", include_in_schema=False)
-def index():
-    return FileResponse(STATIC_DIR / "index.html")
+class PlanPayload(BaseModel):
+    name: str
+    items: list[str]
+
+
+def load_plans():
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT plan_name, items FROM plans ORDER BY rowid"
+        ).fetchall()
+    return {r["plan_name"]: json.loads(r["items"]) for r in rows}
 
 
 @app.get("/api/plans")
 def get_plans():
     today = datetime.now(BEIJING_TZ)
     return {
-        "plans": PLANS,
+        "plans": load_plans(),
         "weekday_plan": WEEKDAY_PLAN,
         "today": today.strftime("%Y-%m-%d"),
         "weekday": today.strftime("%A"),
     }
+
+
+@app.post("/api/plans")
+def save_plan(payload: PlanPayload):
+    name = payload.name.strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Plan name cannot be empty")
+    items = [i.strip() for i in payload.items if i.strip()]
+    with get_conn() as conn:
+        conn.execute(
+            "INSERT INTO plans (plan_name, items, updated_at) VALUES (?, ?, ?) "
+            "ON CONFLICT (plan_name) DO UPDATE SET items = excluded.items, "
+            "updated_at = excluded.updated_at",
+            (name, json.dumps(items, ensure_ascii=False),
+             datetime.now(BEIJING_TZ).isoformat()),
+        )
+    return {"ok": True, "name": name}
+
+
+@app.delete("/api/plans")
+def delete_plan(name: str = Query(...)):
+    with get_conn() as conn:
+        cur = conn.execute("DELETE FROM plans WHERE plan_name = ?", (name,))
+        if cur.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Plan not found")
+    return {"ok": True, "name": name}
+
+
+@app.get("/", include_in_schema=False)
+def index():
+    return FileResponse(STATIC_DIR / "index.html")
 
 
 @app.get("/api/logs")

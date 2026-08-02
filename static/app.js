@@ -593,6 +593,90 @@
     });
   }
 
+  // ---------- Plan editor ----------
+  function addPlanRow(value) {
+    const box = $("plan-edit-items");
+    const row = document.createElement("div");
+    row.className = "pedit-row";
+    const inp = document.createElement("input");
+    inp.type = "text";
+    inp.value = value || "";
+    inp.placeholder = "计划项目…";
+    const rm = document.createElement("button");
+    rm.type = "button";
+    rm.className = "row-rm";
+    rm.textContent = "\u2715";
+    rm.addEventListener("click", () => row.remove());
+    inp.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        addPlanRow("");
+      }
+    });
+    row.append(inp, rm);
+    box.append(row);
+    return inp;
+  }
+
+  function openPlanModal() {
+    const items = plans[currentPlan] || [];
+    $("plan-name").value = currentPlan;
+    $("plan-edit-items").innerHTML = "";
+    if (items.length) {
+      items.forEach((item) => addPlanRow(item));
+    } else {
+      addPlanRow("");
+    }
+    $("plan-modal").showModal();
+    setTimeout(() => $("plan-edit-items").querySelector("input")?.focus(), 50);
+  }
+
+  async function refreshPlans() {
+    const res = await fetch("/api/plans");
+    const data = await res.json();
+    plans = data.plans;
+    populateSelect();
+  }
+
+  function reloadAll() {
+    renderPlan();
+    loadLogs();
+    loadCustom();
+    loadMeals();
+  }
+
+  async function savePlan() {
+    const name = $("plan-name").value.trim();
+    if (!name) {
+      $("plan-name").focus();
+      return;
+    }
+    const items = [...$("plan-edit-items").querySelectorAll("input")]
+      .map((i) => i.value.trim());
+    await fetch("/api/plans", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, items }),
+    });
+    await refreshPlans();
+    currentPlan = name;
+    $("plan-select").value = name;
+    reloadAll();
+    $("plan-modal").close();
+  }
+
+  async function deletePlan() {
+    const name = $("plan-name").value.trim();
+    if (!name) return;
+    if (!confirm(`确定删除计划「${name}」？`)) return;
+    await fetch(`/api/plans?name=${encodeURIComponent(name)}`, { method: "DELETE" });
+    await refreshPlans();
+    currentPlan = Object.keys(plans)[0] || "";
+    $("plan-select").value = currentPlan;
+    reloadAll();
+    $("plan-modal").close();
+  }
+
   // ---------- Init ----------
   async function init() {
     const res = await fetch("/api/plans");
@@ -618,6 +702,18 @@
 
     $("fullscreen-btn").addEventListener("click", toggleFullscreen);
     $("today-btn").addEventListener("click", goToday);
+
+    $("plan-edit-btn").addEventListener("click", openPlanModal);
+    $("plan-add-item").addEventListener("click", () => addPlanRow(""));
+    $("plan-save").addEventListener("click", savePlan);
+    $("plan-delete").addEventListener("click", deletePlan);
+    $("plan-close").addEventListener("click", () => $("plan-modal").close());
+    $("plan-name").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") e.preventDefault();
+    });
+    $("plan-modal").addEventListener("click", (e) => {
+      if (e.target === e.currentTarget) e.currentTarget.close();
+    });
 
     $("metro-toggle").addEventListener("click", () => {
       if (metro.running) metroStop();
