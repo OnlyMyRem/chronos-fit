@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChronosFit</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="hero">
+    <div class="clock" aria-live="off">
+      <div class="date-line">
+        <span id="date"></span>
+        <span class="sep">·</span>
+        <span id="weekday"></span>
+      </div>
+      <div class="time" id="time">00:00:00</div>
+      <div class="tz-label">Beijing Time (UTC+8)</div>
+    </div>
+  </header>
+
+  <main class="panel">
+    <div class="toolbar">
+      <label class="field">
+        <span class="field-label">Date</span>
+        <input type="date" id="log-date" />
+      </label>
+      <label class="field grow">
+        <span class="field-label">Plan</span>
+        <select id="plan-select"></select>
+      </label>
+      <button id="fullscreen-btn" title="Toggle fullscreen">⛶ Fullscreen</button>
+    </div>
+
+    <section class="workout-card">
+      <div class="card-head">
+        <h1 id="plan-title">—</h1>
+        <span class="progress" id="progress">0/0</span>
+      </div>
+      <ul class="items" id="items"></ul>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <span id="save-status"></span>
+    <a href="/api/export-logs" target="_blank" rel="noopener">Export API</a>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

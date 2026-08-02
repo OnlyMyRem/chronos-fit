@@ -1,0 +1,309 @@
+:root {
+  --bg: #0f172a;
+  --panel: #1e293b;
+  --panel-2: #273449;
+  --border: #334155;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --accent: #38bdf8;
+  --accent-dim: rgba(56, 189, 248, 0.14);
+  --done: #475569;
+  --danger: #f87171;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  background: radial-gradient(1200px 600px at 70% -10%, #1b2a4a 0%, var(--bg) 60%);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px 16px 40px;
+}
+
+/* ---------- Clock ---------- */
+.hero {
+  width: 100%;
+  max-width: 900px;
+  text-align: center;
+  padding: 32px 0 8px;
+}
+
+.clock {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.date-line {
+  display: flex;
+  gap: 12px;
+  font-size: 1.05rem;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+
+.date-line .sep {
+  opacity: 0.5;
+}
+
+.time {
+  font-size: clamp(4rem, 14vw, 9rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  line-height: 1.05;
+  text-shadow: 0 0 40px var(--accent-dim);
+}
+
+.tz-label {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+/* ---------- Panel ---------- */
+.panel {
+  width: 100%;
+  max-width: 900px;
+  margin-top: 28px;
+}
+
+.toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field.grow {
+  flex: 1;
+  min-width: 240px;
+}
+
+.field-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+}
+
+input[type="date"],
+select {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+input[type="date"]:focus,
+select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+#fullscreen-btn {
+  background: var(--accent);
+  border: none;
+  color: #06121f;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 11px 18px;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+#fullscreen-btn:hover {
+  filter: brightness(1.1);
+}
+
+/* ---------- Workout card ---------- */
+.workout-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 22px 24px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+
+.card-head h1 {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.progress {
+  background: var(--panel-2);
+  color: var(--accent);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.items {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.items.empty {
+  padding: 24px 0;
+  color: var(--muted);
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 6px;
+  border-bottom: 1px dashed var(--border);
+}
+
+.item:last-child {
+  border-bottom: none;
+}
+
+.item label {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  flex: 1;
+}
+
+.item input[type="checkbox"] {
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  flex: none;
+  transition: background 0.15s ease;
+}
+
+.item input[type="checkbox"]:hover {
+  background: var(--accent-dim);
+}
+
+.item input[type="checkbox"]:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.item input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 11px;
+  border: solid #06121f;
+  border-width: 0 3px 3px 0;
+  transform: rotate(45deg);
+}
+
+.item .name {
+  font-size: 1.05rem;
+  transition: color 0.15s ease;
+}
+
+.item.done .name {
+  text-decoration: line-through;
+  color: var(--done);
+}
+
+/* ---------- Footer ---------- */
+.foot {
+  width: 100%;
+  max-width: 900px;
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.foot a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.foot a:hover {
+  text-decoration: underline;
+}
+
+#save-status.saving {
+  color: var(--accent);
+}
+
+#save-status.error {
+  color: var(--danger);
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 600px) {
+  body {
+    padding: 16px 12px 28px;
+  }
+
+  .date-line {
+    font-size: 0.9rem;
+  }
+
+  .workout-card {
+    padding: 16px;
+  }
+
+  .item .name {
+    font-size: 0.95rem;
+  }
+
+  .card-head h1 {
+    font-size: 1rem;
+  }
+
+  #fullscreen-btn {
+    width: 100%;
+  }
+}
