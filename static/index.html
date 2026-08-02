@@ -35,46 +35,40 @@
       <button id="fullscreen-btn" title="Toggle fullscreen">⛶ Fullscreen</button>
     </div>
 
-    <section class="workout-card">
-      <div class="card-head">
-        <h1 id="plan-title">—</h1>
-        <span class="progress" id="progress">0/0</span>
-      </div>
-      <ul class="items" id="items"></ul>
-
-      <section class="custom-section">
-        <div class="custom-head">
-          <h2>自定义补充</h2>
+    <div class="dashboard">
+      <section class="workout-card">
+        <div class="card-head">
+          <h1 id="plan-title">—</h1>
+          <span class="progress" id="progress">0/0</span>
         </div>
+        <ul class="items" id="items"></ul>
+        <div class="custom-head"><h2>自定义补充</h2></div>
         <ul class="items" id="custom-items"></ul>
-        <div class="custom-add">
-          <input type="text" id="custom-input" placeholder="添加不在此计划里的项目…" maxlength="120" />
-          <button id="custom-add-btn" type="button">＋ 添加</button>
-        </div>
       </section>
-    </section>
 
-    <aside class="metronome-card" id="metronome">
-      <div class="card-head">
-        <h1>节拍器</h1>
-        <span class="meta" id="metro-status">已停止</span>
-      </div>
+      <aside class="metronome-card" id="metronome">
+        <div class="card-head">
+          <h1>节拍器</h1>
+          <span class="meta" id="metro-status">已停止</span>
+        </div>
 
-      <div class="presets" id="metro-presets">
-        <button type="button" data-min="2">2 分钟</button>
-        <button type="button" data-min="5">5 分钟</button>
-      </div>
+        <div class="presets" id="metro-presets">
+          <button type="button" data-sec="120">2 分钟</button>
+          <button type="button" data-sec="300">5 分钟</button>
+        </div>
 
-      <div class="count" id="metro-count">02:00</div>
+        <div class="count" id="metro-count">02:00</div>
 
-      <div class="custom-dur">
-        <input type="number" id="metro-min" min="1" max="180" placeholder="分钟" />
-        <button id="metro-apply" type="button">应用时长</button>
-      </div>
+        <div class="custom-dur">
+          <input type="number" id="metro-min" min="0" max="180" placeholder="分" />
+          <input type="number" id="metro-sec" min="0" max="59" placeholder="秒" />
+          <button id="metro-apply" type="button">应用</button>
+        </div>
 
-      <button class="metro-toggle" id="metro-toggle" type="button">▶ 开始</button>
-      <div class="metro-note">间隔到点会播放「台球碰击」声</div>
-    </aside>
+        <button class="metro-toggle" id="metro-toggle" type="button">▶ 开始</button>
+        <div class="metro-note">间隔到点会播放提示音</div>
+      </aside>
+    </div>
   </main>
 
   <div id="fullscreen-hint">已进入全屏 · 按 <kbd>Esc</kbd> 或 <kbd>F11</kbd> 退出全屏</div>

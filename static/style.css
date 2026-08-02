@@ -403,32 +403,49 @@ select:focus {
 }
 
 /* ---------- Custom section ---------- */
-.custom-section {
-  margin-top: 18px;
-  border-top: 1px dashed var(--border);
-  padding-top: 14px;
-}
-
 .custom-head h2 {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 1.5px;
   color: var(--muted);
-  margin-bottom: 6px;
-}
-
-#custom-items:empty::before {
-  content: "还没有自定义项目";
-  display: block;
-  padding: 10px 0;
-  color: var(--muted);
-  font-size: 0.9rem;
+  margin: 16px 0 2px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border);
 }
 
 .item.custom {
-  padding: 10px 6px;
+  padding: 11px 6px;
   opacity: 0.95;
+}
+
+li.item.add-row {
+  padding: 11px 6px;
+  cursor: text;
+}
+
+.item .ctext {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  color: var(--text);
+  font-size: 1.05rem;
+  font-family: inherit;
+  padding: 2px 4px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.item .ctext::placeholder {
+  color: var(--muted);
+}
+
+.item:hover .ctext,
+.item .ctext:focus {
+  border-bottom-color: rgba(56, 189, 248, 0.5);
 }
 
 .item .del {
@@ -441,51 +458,17 @@ select:focus {
   color: var(--muted);
   font-size: 0.85rem;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.item:hover .del {
+  opacity: 1;
 }
 
 .item .del:hover {
   background: rgba(248, 113, 113, 0.15);
   color: var(--danger);
-}
-
-.custom-add {
-  display: flex;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.custom-add input {
-  flex: 1;
-  background: var(--panel-2);
-  border: 1px solid var(--border);
-  color: var(--text);
-  border-radius: 10px;
-  padding: 10px 12px;
-  font-size: 0.95rem;
-  outline: none;
-  min-width: 0;
-}
-
-.custom-add input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-dim);
-}
-
-#custom-add-btn {
-  background: var(--accent);
-  border: none;
-  color: #06121f;
-  font-weight: 600;
-  border-radius: 10px;
-  padding: 10px 14px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: filter 0.15s ease;
-}
-
-#custom-add-btn:hover {
-  filter: brightness(1.1);
 }
 
 /* ---------- Fullscreen hint ---------- */

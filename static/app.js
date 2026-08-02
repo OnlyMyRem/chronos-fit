@@ -184,43 +184,33 @@
     if (!loaded) return;
     const res = await fetch(`/api/custom/logs?log_date=${encodeURIComponent(currentDate)}`);
     const logs = await res.json();
-    const itemsEl = $("custom-items");
-    itemsEl.innerHTML = "";
-    logs.forEach((log) => appendCustomItem(log.item_name, log.is_completed === 1));
+    const box = $("custom-items");
+    box.innerHTML = "";
+    logs.forEach((log) => box.append(makeCustomLi(log.item_name, log.is_completed === 1)));
+    box.append(makeAddRow());
   }
 
-  function appendCustomItem(name, done) {
-    const itemsEl = $("custom-items");
+  function makeCustomLi(name, done) {
     const li = document.createElement("li");
     li.className = "item custom" + (done ? " done" : "");
-    li.dataset.name = name;
 
-    const label = document.createElement("label");
     const cb = document.createElement("input");
     cb.type = "checkbox";
     cb.checked = done;
-    cb.dataset.name = name;
 
-    const span = document.createElement("span");
-    span.className = "name";
-    span.textContent = name;
-
-    label.append(cb, span);
-    li.append(label);
+    const inp = document.createElement("input");
+    inp.type = "text";
+    inp.className = "ctext";
+    inp.value = name;
+    inp.maxLength = 120;
 
     const del = document.createElement("button");
     del.type = "button";
     del.className = "del";
-    del.title = "删除该自定义项目";
+    del.title = "删除";
     del.textContent = "\u2715";
-    del.addEventListener("click", async () => {
-      await fetch(
-        `/api/custom?log_date=${encodeURIComponent(currentDate)}&item_name=${encodeURIComponent(name)}`,
-        { method: "DELETE" }
-      );
-      loadCustom();
-    });
-    li.append(del);
+
+    li.append(cb, inp, del);
 
     cb.addEventListener("change", async () => {
       cb.disabled = true;
@@ -245,21 +235,87 @@
       }
     });
 
-    itemsEl.append(li);
+    inp.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        inp.blur();
+      }
+    });
+    inp.addEventListener("change", () => renameCustomItem(name, li));
+
+    del.addEventListener("click", async () => {
+      await fetch(
+        `/api/custom?log_date=${encodeURIComponent(currentDate)}&item_name=${encodeURIComponent(name)}`,
+        { method: "DELETE" }
+      );
+      loadCustom();
+    });
+
+    return li;
   }
 
-  async function addCustom() {
-    const input = $("custom-input");
-    const name = input.value.trim();
-    if (!name) return;
-    const res = await fetch("/api/custom/add", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+  async function renameCustomItem(oldName, li) {
+    const inp = li.querySelector(".ctext");
+    const name = inp.value.trim();
+    const done = li.classList.contains("done");
+    if (!name) {
+      inp.value = oldName;
+      return;
+    }
+    if (name === oldName) return;
+    const headers = { "Content-Type": "application/json" };
+    await fetch("/api/custom/add", {
+      method: "POST", headers,
       body: JSON.stringify({ log_date: currentDate, item_name: name }),
     });
-    if (!res.ok) throw new Error(await res.text());
-    input.value = "";
+    if (done) {
+      await fetch("/api/custom/toggle", {
+        method: "POST", headers,
+        body: JSON.stringify({ log_date: currentDate, item_name: name, is_completed: true }),
+      });
+    }
+    await fetch(
+      `/api/custom?log_date=${encodeURIComponent(currentDate)}&item_name=${encodeURIComponent(oldName)}`,
+      { method: "DELETE" }
+    );
     loadCustom();
+  }
+
+  function makeAddRow() {
+    const li = document.createElement("li");
+    li.className = "item add-row";
+
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.disabled = true;
+
+    const inp = document.createElement("input");
+    inp.type = "text";
+    inp.className = "ctext";
+    inp.id = "custom-input";
+    inp.placeholder = "点此添加自定义项目，回车保存…";
+    inp.maxLength = 120;
+
+    li.append(cb, inp);
+
+    inp.addEventListener("keydown", async (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const name = inp.value.trim();
+        if (!name) return;
+        const res = await fetch("/api/custom/add", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ log_date: currentDate, item_name: name }),
+        });
+        if (!res.ok) return;
+        loadCustom();
+      } else if (e.key === "Escape") {
+        inp.value = "";
+      }
+    });
+
+    return li;
   }
 
   // ---------- Today ----------
@@ -286,34 +342,27 @@
     return actx;
   }
 
-  function playClack(ctx, time, freq) {
-    const dur = 0.10;
-    const buf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * dur), ctx.sampleRate);
-    const data = buf.getChannelData(0);
-    for (let i = 0; i < buf.length; i++) {
-      const t = i / buf.length;
-      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, 2);
-    }
-    const src = ctx.createBufferSource();
-    src.buffer = buf;
-    const band = ctx.createBiquadFilter();
-    band.type = "bandpass";
-    band.frequency.value = freq;
-    band.Q.value = 0.9;
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.7, time);
-    gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
-    src.connect(band).connect(gain).connect(ctx.destination);
-    src.start(time);
-    src.stop(time + dur);
+  function chime(freq, when, dur, vol, type) {
+    const ctx = ensureAudio();
+    const o = ctx.createOscillator();
+    o.type = type || "sine";
+    o.frequency.value = freq;
+    const g = ctx.createGain();
+    const t = ctx.currentTime + when;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(ctx.destination);
+    o.start(t);
+    o.stop(t + dur + 0.05);
   }
 
   function beep() {
-    const ctx = ensureAudio();
+    ensureAudio();
     try {
-      playClack(ctx, ctx.currentTime + 0.01, 2400);
-      playClack(ctx, ctx.currentTime + 0.16, 1800);
-      playClack(ctx, ctx.currentTime + 0.30, 1200);
+      chime(698.46, 0, 0.5, 0.9, "sine");
+      chime(880.0, 0.30, 0.5, 0.9, "sine");
+      chime(1174.66, 0.60, 0.7, 0.9, "sine");
     } catch (err) {
       /* ignore */
     }
@@ -371,9 +420,10 @@
     metroRender(false);
   }
 
-  function metroSetMinutes(min) {
-    metro.interval = Math.max(1, min) * 60000;
-    $("metro-min").value = min;
+  function metroSetSeconds(sec) {
+    metro.interval = Math.max(1, Math.round(sec) || 60) * 1000;
+    $("metro-min").value = Math.floor(metro.interval / 60000);
+    $("metro-sec").value = Math.round((metro.interval % 60000) / 1000);
     updatePresetActive();
     if (metro.running) {
       metro.nextAt = Date.now() + metro.interval;
@@ -383,10 +433,18 @@
     }
   }
 
+  function applyMetroDuration() {
+    const m = parseInt($("metro-min").value, 10) || 0;
+    const s = parseInt($("metro-sec").value, 10) || 0;
+    if (m === 0 && s === 0) return;
+    metroSetSeconds(m * 60 + s);
+    if (!metro.running) metroStart();
+  }
+
   function updatePresetActive() {
-    const activeMin = Math.round(metro.interval / 60000);
+    const activeSec = metro.interval / 1000;
     document.querySelectorAll("#metro-presets button").forEach((btn) => {
-      btn.classList.toggle("active", +btn.dataset.min === activeMin);
+      btn.classList.toggle("active", +btn.dataset.sec === activeSec);
     });
   }
 
@@ -414,34 +472,28 @@
 
     $("fullscreen-btn").addEventListener("click", toggleFullscreen);
     $("today-btn").addEventListener("click", goToday);
-    $("custom-add-btn").addEventListener("click", addCustom);
-    $("custom-input").addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        addCustom();
-      }
-    });
 
     $("metro-toggle").addEventListener("click", () => {
       if (metro.running) metroStop();
       else metroStart();
     });
 
-    $("metro-apply").addEventListener("click", () => {
-      const v = parseInt($("metro-min").value, 10);
-      if (!v || v < 1) return;
-      metroSetMinutes(v);
-      if (!metro.running) metroStart();
-    });
+    $("metro-apply").addEventListener("click", applyMetroDuration);
     $("metro-min").addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
-        $("metro-apply").click();
+        applyMetroDuration();
+      }
+    });
+    $("metro-sec").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        applyMetroDuration();
       }
     });
     document.querySelectorAll("#metro-presets button").forEach((btn) => {
       btn.addEventListener("click", () => {
-        metroSetMinutes(+btn.dataset.min);
+        metroSetSeconds(+btn.dataset.sec);
         metroStart();
       });
     });
