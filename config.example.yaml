@@ -1,0 +1,77 @@
+# ChronosFit 配置文件模板
+#
+# 用法：复制本文件为 config.yaml 后按需修改。
+#   cp config.example.yaml config.yaml
+# config.yaml 已被 .gitignore 忽略，密码不会进版本库。
+#
+# 说明：
+#   - 本文件不存在时程序照常启动，全部使用下面的默认值（SQLite + 开发者模式邮箱）。
+#   - 每一项都可以用注释里标注的环境变量覆盖，方便 Docker / K8s 注入密钥而无需改文件。
+#   - 环境变量优先级高于本文件。
+
+server:
+  host: 0.0.0.0            # 覆盖：CHRONOSFIT_HOST
+  port: 18000              # 覆盖：CHRONOSFIT_PORT
+
+database:
+  # ------------------------------------------------------------------
+  # 支持 SQLite 与 MySQL 两种数据库，只由下面这一个 url 决定。
+  # 覆盖：DATABASE_URL
+  #
+  # 1) SQLite（默认，零配置）
+  #    数据文件落在项目根的 data/workout.db。用 Docker 时务必把 data 目录挂载出来，
+  #    否则容器一删数据就没了（docker-compose.yml 里已经配好了）。
+  #      url: sqlite:///./data/workout.db
+  #
+  # 2) MySQL（本机 / 另一台机器 / compose 里的 mysql 服务都可以）
+  #    需要先建库：CREATE DATABASE chronosfit CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+  #    建表由程序启动时自动完成，不必手工执行 SQL。
+  #      url: mysql+pymysql://用户名:密码@数据库地址:3306/chronosfit?charset=utf8mb4
+  #
+  #    在容器里连「容器外的 MySQL」时，把地址写成 host.docker.internal
+  #    （docker-compose.yml 已注入 host-gateway 解析）：
+  #      url: mysql+pymysql://chronosfit:你的密码@host.docker.internal:3306/chronosfit?charset=utf8mb4
+  #
+  # 3) 容器里用「宿主机上的 SQLite 文件」：把文件所在目录挂载进容器再指向它
+  #      url: sqlite:////mnt/chronos/data/workout.db
+  # ------------------------------------------------------------------
+  url: sqlite:///./data/workout.db
+
+  echo_sql: false                  # true = 把每条 SQL 打到日志，排查用
+  pool_recycle_seconds: 3600       # MySQL 空闲超时前主动重连，避免 "server has gone away"
+
+auth:
+  # 历史导出接口 GET /api/export 的可选访问密钥。
+  # 留空 = 接口对外开放；已登录的会话无需密钥，匿名调用需带 ?api_key=xxx。
+  # 覆盖：CHRONOSFIT_API_KEY
+  secret_key: ""
+
+  # 账号安全策略（一般不需要改）
+  session_days: 30           # 登录态有效期
+  code_ttl_minutes: 10       # 注册 / 重置密码的验证码有效期
+  resend_seconds: 60         # 同一邮箱同一用途的验证码重发冷却
+  max_login_failures: 5      # 连续失败多少次后临时锁定账号
+  lockout_minutes: 15        # 临时锁定时长（分钟），可用验证码重置密码解锁
+
+# ----------------------------------------------------------------------
+# 邮箱服务器（用于注册与重置密码的验证码投递）
+#
+# 【如何配置】以 QQ 邮箱为例：
+#   1. 网页登录 mail.qq.com → 设置 → 账号与安全 → 开启 IMAP/SMTP 服务
+#   2. 按提示验证后生成一枚「授权码」（16 位字母），那串授权码才是这里的 password，
+#      不是你的 QQ 登录密码。Gmail 用「应用专用密码」，163/126 同理。
+#   3. 把下面三项填好，重启服务即改为真实发信。
+#
+# 【留白会怎样】host / user / password 三项中任何一项为空 → 自动走「开发者模式」：
+#   不发邮件，验证码直接随接口返回、由前端弹窗显示，同时打印到服务端日志，
+#   方便本地开发与自测。
+#
+# 全部字段都支持环境变量覆盖，生产环境建议用环境变量注入密码：
+#   SMTP_HOST / SMTP_PORT / SMTP_USER / SMTP_PASSWORD / SMTP_FROM
+# ----------------------------------------------------------------------
+smtp:
+  host: ""                 # 例：smtp.qq.com
+  port: 465                # 465 = SSL 直连；587（或其他）= STARTTLS
+  user: ""                 # 例：123456789@qq.com —— 同时也是默认发件人
+  password: ""             # SMTP 授权码 / 应用专用密码，不是登录密码
+  sender: ""               # 发件人地址，留空则等于 user

@@ -1,0 +1,7 @@
+# 容器入口脚本必须是 LF，否则 Alpine/Debian 的 sh 会报 \r 错误
+*.sh text eol=lf
+
+# 配置文件与前端保持 LF，避免镜像内外行尾不一致
+Dockerfile text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf

@@ -1,0 +1,2980 @@
+:root {
+  color-scheme: dark;
+  /* Soft monochrome dark — inspired by Qt Creator Dark (2024):
+     warm charcoal background, no pure black/white punches. Hierarchy is
+     bg < panel < panel-2 with small, readable steps so panels don't glow. */
+  --bg:        #121316;
+  --panel:     #1a1b20;
+  --panel-2:   #24252c;
+  --border:    #33353f;
+  --text:      #d7d9df;   /* soft off-white, never pure #fff */
+  --muted:     #8b8f9a;
+  --accent:    #e7e8ec;   /* monochrome: accent is a lighter off-white (hierarchy, no color) */
+  --accent-dim: rgba(231, 232, 236, 0.10);
+  --accent-2:  #c9a24c;   /* muted gold, stays within the warm-gray family */
+  --done:      #5a5d66;
+  --danger:    #e37676;
+  --success:   #2f7d52;   /* 打卡成就绿：压低饱和，避免在暖炭背景上刺眼 */
+  --success-strong: #38915f;
+  --success-ink: #eaf5ee;
+  --accent-ink: #121316;
+  --content-max: 800px;
+  --hang-h: 48px;
+  --hang-bg: rgba(18, 19, 22, 0.86);
+}
+
+body.light {
+  color-scheme: light;
+  --bg: #f5f5f5;
+  --panel: #ffffff;
+  --panel-2: #f0f0f0;
+  --border: #d4d4d4;
+  --text: #1a1a1a;
+  --muted: #6b7280;
+  --accent: #2563eb;
+  --accent-dim: rgba(37, 99, 235, 0.10);
+  --accent-2: #d97706;
+  --done: #a3a3a3;
+  --danger: #ef4444;
+  --success: #15803d;
+  --success-ink: #f2fbf5;
+  --accent-ink: #ffffff;
+  --hang-bg: rgba(245, 245, 245, 0.86);
+}
+
+body.light {
+  background: radial-gradient(1200px 600px at 70% -10%, #dbeafe 0%, var(--bg) 60%);
+}
+
+body.light .auth-btn,
+body.light .full-btn {
+  color: #fff;
+}
+
+body.light .item input[type="checkbox"]:checked::after {
+  border-color: #fff;
+}
+
+body.light #fullscreen-hint {
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--muted);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+/* One continuous scroll: the plan, meals and body stats live in a single document.
+   The browser scrollbar stays hidden; there is no page snapping any more. */
+html {
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+body {
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  /* Soft warm-gray glow instead of a stark bright halo — echoes Qt Creator's
+     gently lit window without any blown-out "spotlight" feeling. */
+  background: radial-gradient(1200px 600px at 70% -10%, #1d1f27 0%, var(--bg) 62%);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: calc(var(--hang-h) + 18px) 16px 92px;
+}
+
+/* ---------- Hanging bar ---------- */
+/* Fixed, never in flow: revealing the compact clock on scroll cannot shift the page. */
+.hang-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--hang-h);
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 16px;
+  background: var(--hang-bg);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid transparent;
+}
+
+body.scrolled .hang-bar {
+  border-bottom-color: var(--border);
+}
+
+/* Floating top clock/date bar.
+   In night mode we deliberately keep this low-saturation, medium-light
+   weight, same-family as body text — never a bright "dashboard" time so it
+   doesn't glow the way pure-white 700 did. */
+.hang-clock {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.92rem;
+  font-weight: 500;
+  letter-spacing: 0.4px;
+  color: var(--text);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+body.scrolled .hang-clock {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.hang-clock #hang-weekday {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.hang-clock .sep {
+  opacity: 0.35;
+}
+
+.hang-time {
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.98rem;
+}
+
+.top-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ---------- Top-bar action buttons ----------
+   icon-btn (38×38) stays for pure icons; text-icon-btn grows with text but
+   keeps the same height / rounded border so every row button has uniform size. */
+.icon-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--accent);
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.icon-btn:hover {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+/* For buttons with short text labels (e.g. language "EN"/"中" or the compact
+   data split-button).  Same 38px height, rounded border, but widths adapt. */
+.icon-btn.text-icon-btn {
+  width: auto;
+  min-width: 38px;
+  padding: 0 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  gap: 4px;
+}
+
+.icon-btn.text-icon-btn .chev {
+  color: var(--muted);
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.15s ease;
+}
+
+/* 下拉展开时箭头翻转，明确当前菜单状态。 */
+.icon-btn[aria-expanded="true"] .chev {
+  transform: rotate(180deg);
+}
+
+.icon-btn[aria-expanded="true"] {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+/* Language button: centered, tabular so the two chars don't jitter width. */
+.icon-btn.lang-btn {
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  min-width: 38px;
+  justify-content: center;
+  text-transform: uppercase;
+}
+
+/* 数据下拉菜单的定位容器；菜单本体复用 .more-menu 的弹层样式。 */
+.data-wrap {
+  position: relative;
+}
+
+.more-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 208px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+  z-index: 40;
+}
+
+.more-menu[hidden] {
+  display: none;
+}
+
+.auth-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.auth-form {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.auth-form input {
+  width: 120px;
+}
+
+.auth-btn {
+  background: var(--accent);
+  border: none;
+  color: #06121f;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 7px 14px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  transition: filter 0.15s ease;
+  white-space: nowrap;
+}
+
+.auth-btn:hover {
+  filter: brightness(1.1);
+}
+
+.auth-btn.secondary {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--accent);
+}
+
+.auth-btn.secondary:hover {
+  border-color: var(--accent);
+}
+
+.auth-user {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.avatar-btn {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.avatar-btn:hover,
+.avatar-btn:focus-visible,
+.avatar-btn[aria-expanded="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Account popover: hangs off the fixed bar, so it already paints above the page. */
+.auth-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 196px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+}
+
+.auth-menu[hidden] {
+  display: none;
+}
+
+.auth-menu-id {
+  padding: 2px 8px 8px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.auth-menu-item,
+.more-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.88rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.auth-menu-item:hover,
+.auth-menu-item:focus-visible,
+.more-menu-item:hover,
+.more-menu-item:focus-visible {
+  background: var(--panel-2);
+  color: var(--accent);
+}
+
+/* ---------- Settings dialog ---------- */
+.settings-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.settings-account {
+  font-size: 0.84rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.settings-pwd {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+/* 身体信息：性别下拉 + 身高输入 + 保存按钮排成一行，窄屏自动换行。 */
+.settings-profile {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.profile-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.profile-row .field {
+  flex: 0 0 auto;
+}
+
+.profile-row .field:first-child select {
+  width: 96px;
+}
+
+.profile-row .field:last-of-type input {
+  width: 112px;
+  text-align: right;
+}
+
+.profile-row .auth-btn {
+  height: 37px;
+}
+
+.settings-status {
+  min-height: 1.1rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.settings-status.error {
+  color: var(--danger);
+}
+
+.settings-status.ok {
+  color: var(--accent);
+}
+
+/* ---------- Auth modal ---------- */
+.auth-modal .drawer-body {
+  gap: 16px;
+}
+
+.auth-modal .field input {
+  width: 100%;
+}
+
+.auth-view {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.code-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.send-code-btn {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.send-code-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.send-code-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.full-btn {
+  background: var(--accent);
+  border: none;
+  color: #06121f;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 11px 16px;
+  cursor: pointer;
+  font-size: 0.92rem;
+  transition: filter 0.15s ease;
+}
+
+.full-btn:hover {
+  filter: brightness(1.1);
+}
+
+.auth-links {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.82rem;
+}
+
+.auth-links a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.auth-links a:hover {
+  text-decoration: underline;
+}
+
+.auth-msg {
+  font-size: 0.82rem;
+  min-height: 1em;
+  color: var(--muted);
+  word-break: break-word;
+}
+
+.auth-msg.error {
+  color: var(--danger);
+}
+
+.auth-msg.ok {
+  color: var(--accent);
+}
+
+/* ---------- Clock ---------- */
+/* Centered: the clock is the hero of the single scrolling page. */
+.hero {
+  width: 100%;
+  max-width: var(--content-max);
+  text-align: center;
+  padding: 8px 0 8px;
+}
+
+.clock {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.date-line {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 1px;
+}
+
+.date-line [data-bind="weekday"] {
+  color: var(--accent);
+}
+
+.back-today {
+  align-self: center;
+  padding: 3px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.back-today:hover {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.date-line .sep {
+  opacity: 0.4;
+}
+
+.time {
+  font-size: clamp(3rem, 12vw, 6.5rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  line-height: 1.05;
+  text-shadow: 0 0 40px var(--accent-dim);
+}
+
+.tz-label {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+/* ---------- Panel ---------- */
+.panel {
+  width: 100%;
+  max-width: var(--content-max);
+  margin-top: 28px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field.grow {
+  flex: 1;
+  min-width: 240px;
+}
+
+.field-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+}
+
+/* Global form-control baseline: every input except the custom checkboxes is
+   themed, so nothing falls back to the UA white field in night mode.
+   width:100% guarantees inputs fill their `.field` container, so side-by-side
+   or stacked fields always line up cleanly regardless of UA defaults. */
+input:not([type="checkbox"]),
+textarea,
+select {
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+input:not([type="checkbox"]):focus,
+textarea:focus,
+select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.rail-today {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 3px 10px;
+  cursor: pointer;
+  font-size: 0.72rem;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  white-space: nowrap;
+}
+
+.rail-today:hover {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+/* 编辑计划：文字按钮，宽度自适应、不收缩，避免文字溢出边框。 */
+#plan-edit-btn {
+  flex: none;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 9px 14px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+#plan-edit-btn:hover {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+/* ---------- Workout card ---------- */
+.workout-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 22px 24px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  /* No border here: the progress track below is the one divider under the title,
+     a border plus a track read as two stacked lines. */
+  margin-bottom: 12px;
+}
+
+/* Merged plan title: the select IS the title (no redundant label above).
+   Bold, readable, same role as the old h1 but lets users switch plans directly. */
+.card-head-plan {
+  flex-wrap: wrap;
+}
+
+.plan-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.plan-title-select {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 6px 30px 6px 10px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 12px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+body.light .plan-title-select {
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+}
+
+.plan-title-select:hover {
+  border-color: var(--border);
+  background-color: var(--panel-2);
+}
+
+.plan-title-select:focus {
+  border-color: var(--accent);
+  background-color: var(--panel-2);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.card-head h1 {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.progress {
+  background: var(--panel-2);
+  color: var(--accent);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+/* ---------- Progress bar ---------- */
+.progress-bar-wrap {
+  width: 100%;
+  height: 5px;
+  background: var(--panel-2);
+  border-radius: 999px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.items {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.items.empty {
+  padding: 24px 0;
+  color: var(--muted);
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 6px;
+  border-bottom: 1px dashed var(--border);
+}
+
+.item:last-child {
+  border-bottom: none;
+}
+
+.item label {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  flex: 1;
+}
+
+.item input[type="checkbox"] {
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  flex: none;
+  transition: background 0.15s ease;
+}
+
+.item input[type="checkbox"]:hover {
+  background: var(--accent-dim);
+}
+
+.item input[type="checkbox"]:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.item input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 11px;
+  border: solid #06121f;
+  border-width: 0 3px 3px 0;
+  transform: rotate(45deg);
+}
+
+.item .name {
+  font-size: 1.05rem;
+  transition: color 0.15s ease;
+}
+
+.item.done .name {
+  text-decoration: line-through;
+  color: var(--done);
+}
+
+.item.done .ctext {
+  color: var(--done);
+  text-decoration: line-through;
+}
+
+/* ---------- Item progress bar (per-item) ---------- */
+.item-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.item-progress .bar-wrap {
+  flex: 1;
+  height: 8px;
+  background: var(--panel-2);
+  border-radius: 4px;
+  overflow: hidden;
+  min-width: 60px;
+}
+
+.item-progress .bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 4px;
+  transition: width 0.25s ease;
+}
+
+.item-progress .bar-text {
+  font-size: 0.78rem;
+  color: var(--muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.item-progress .step-btn {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-2);
+  color: var(--accent);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s ease;
+}
+
+.item-progress .step-btn:hover {
+  border-color: var(--accent);
+}
+
+/* ---------- Dashboard layout ---------- */
+.dashboard {
+  display: flex;
+  justify-content: center;
+}
+
+.dashboard .workout-card {
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* ---------- Future-date notice ---------- */
+.future-notice {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--danger);
+  background: rgba(248, 113, 113, 0.10);
+  border: 1px solid var(--danger);
+  border-radius: 10px;
+  padding: 9px 12px;
+  margin-bottom: 10px;
+}
+
+.workout-card.locked .item input[type="checkbox"] {
+  pointer-events: none;
+  opacity: 0.35;
+}
+
+.workout-card.locked .item .ctext {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* ---------- Toolbar panel buttons ---------- */
+.cal-toggle-btn {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 11px 16px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  white-space: nowrap;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cal-toggle-btn:hover {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.panel-btn {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 11px 18px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  white-space: nowrap;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.panel-btn:hover {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+/* ---------- Panel dialogs (calendar / metronome / auth) ---------- */
+.panel-dialog {
+  padding: 0;
+  width: min(420px, 92vw);
+  max-height: 80vh;
+  overflow: hidden;
+}
+
+.panel-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-dialog .drawer-body {
+  overflow-y: auto;
+}
+
+/* ---------- Export history dialog ---------- */
+.export-hint {
+  margin: 0 0 14px;
+  font-size: 0.84rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.export-dates {
+  display: flex;
+  gap: 10px;
+}
+
+.export-dates .field {
+  flex: 1;
+  min-width: 0;
+}
+
+.export-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 14px;
+}
+
+.export-quick button {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.8rem;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.export-quick button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.export-quick button.active {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.export-format {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.radio {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.export-status {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--muted);
+  min-height: 20px;
+  margin-bottom: 12px;
+}
+
+.export-status.error {
+  color: var(--danger);
+}
+
+.drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.drawer-head h1 {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.drawer-close {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.drawer-close:hover {
+  color: var(--text);
+  background: var(--panel-2);
+}
+
+.drawer-body {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ---------- Calendar ---------- */
+.cal-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cal-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--muted);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.cal-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.cal-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  border-radius: 8px;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.15s ease, color 0.15s ease;
+  color: var(--text);
+}
+
+.cal-day:hover {
+  background: var(--panel-2);
+}
+
+.cal-day.other-month {
+  color: var(--done);
+  opacity: 0.4;
+}
+
+/* 今天：用内描边环表达，不占布局、也不会把格子顶偏。
+   金色与打卡绿是两种色相，「今天」和「已完成」因此不会互相误读。 */
+.cal-day.today {
+  box-shadow: inset 0 0 0 1.5px var(--accent-2);
+  font-weight: 700;
+}
+
+/* 已打卡：整格填成成就绿即可，不再叠加对勾。
+   填色本身就是足够强的信号（参考 GitHub 贡献图），
+   多一枚文字勾只会让 24px 的小格子显得拥挤突兀。 */
+.cal-day.has-log {
+  background: var(--success);
+  color: var(--success-ink);
+  font-weight: 600;
+}
+
+.cal-day.has-log:hover {
+  background: var(--success-strong);
+}
+
+/* 选中日：用外描边（outline 不影响布局），叠在绿格或今日环上都清晰可辨。 */
+.cal-day.selected {
+  outline: 2px solid var(--text);
+  outline-offset: 1px;
+}
+
+/* 图例：说明填色与描边各代表什么，替代原先那枚多余的对勾。 */
+.cal-legend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.cal-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.cal-legend em {
+  font-style: normal;
+}
+
+.cal-swatch {
+  width: 11px;
+  height: 11px;
+  border-radius: 4px;
+  flex: none;
+}
+
+.cal-swatch.done {
+  background: var(--success);
+}
+
+.cal-swatch.today {
+  box-shadow: inset 0 0 0 1.5px var(--accent-2);
+}
+
+/* 累计打卡条：与图例同处月历下方，用「数字 + 标签」的极简统计行，
+   不用火焰 emoji —— 彩色表情会破坏这套暖炭单色配色。 */
+.cal-streak {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 0.72rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.cal-streak b {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-right: 2px;
+}
+
+.cal-streak em {
+  font-style: normal;
+}
+
+.cal-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cal-nav span {
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cal-nav-btn {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.cal-nav-btn:hover {
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.meta {
+  font-size: 0.8rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.meta.running {
+  color: var(--accent);
+}
+
+.custom-dur {
+  display: flex;
+  gap: 8px;
+}
+
+.custom-dur input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---------- Calendar rail (left) ---------- */
+/* The calendar is a permanent widget on the left, mirroring the countdown rail on the
+   right. Clicking a day sets the browsed date for the plan and the meals. */
+.calendar-rail {
+  position: fixed;
+  left: 44px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 236px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  scrollbar-width: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+  z-index: 30;
+}
+
+.calendar-rail::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.calendar-rail .cal-nav {
+  justify-content: space-between;
+}
+
+.calendar-rail .cal-nav span {
+  font-size: 0.8rem;
+}
+
+/* ---------- Countdown rail (capsules on the right) ---------- */
+.metro-rail {
+  position: fixed;
+  right: 44px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 200px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  /* The end-of-countdown pulse scales a capsule past the rail width; that used to
+     pop a horizontal scrollbar under the pills. */
+  overflow-x: hidden;
+  scrollbar-width: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 30;
+}
+
+.metro-rail::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.rail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+}
+
+.rail-title {
+  font-size: 0.7rem;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.rail-add {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--accent);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.rail-add:hover {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.rail-pills {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rail-empty {
+  font-size: 0.78rem;
+  color: var(--muted);
+  padding: 2px 4px;
+}
+
+/* Each capsule drains its accent fill as the interval runs out. */
+.metro-pill {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel);
+  padding: 9px 10px 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.metro-pill:hover {
+  border-color: var(--accent);
+}
+
+.pill-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+
+.pill-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 100%;
+  background: var(--accent-dim);
+  pointer-events: none;
+}
+
+.pill-text {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+  line-height: 1.15;
+}
+
+.pill-name {
+  font-size: 0.72rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pill-time {
+  font-size: 1.16rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.pill-btns {
+  position: relative;
+  display: flex;
+  gap: 1px;
+}
+
+.pill-btn {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.pill-btn:hover {
+  color: var(--accent);
+  background: var(--panel-2);
+}
+
+.metro-pill.paused {
+  opacity: 0.6;
+}
+
+.metro-pill.paused .pill-fill {
+  background: transparent;
+}
+
+/* The capsule being edited stretches and hosts the editor form itself. */
+.metro-pill.is-editing {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  border-radius: 18px;
+  border-color: var(--accent);
+  padding: 10px 12px;
+  opacity: 1;
+}
+
+.metro-pill.is-editing .pill-fill {
+  display: none;
+}
+
+.metro-pill.is-new {
+  border-style: dashed;
+}
+
+.metro-pill.over {
+  border-color: var(--accent-2);
+  animation: pill-pulse 0.6s ease-in-out 3;
+}
+
+.metro-pill.over .pill-time {
+  color: var(--accent-2);
+}
+
+@keyframes pill-pulse {
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 22px var(--accent-dim);
+  }
+}
+
+.rail-hint {
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--accent-2);
+  padding: 0 4px;
+}
+
+/* The editor is mounted inside the capsule it belongs to — no card of its own. */
+.metro-pop {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.metro-pop input,
+.metro-pop select {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 0.88rem;
+}
+
+.pop-preview {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  border-radius: 10px;
+  padding: 8px;
+  font-size: 0.84rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.pop-preview:hover {
+  border-color: var(--accent);
+}
+
+.pop-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* ---------- Custom section ---------- */
+.custom-head h2 {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin: 16px 0 2px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border);
+}
+
+.item.custom {
+  padding: 11px 6px;
+  opacity: 0.95;
+}
+
+li.item.add-row {
+  padding: 11px 6px;
+  cursor: text;
+}
+
+.item .ctext {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  color: var(--text);
+  font-size: 1.05rem;
+  font-family: inherit;
+  padding: 2px 4px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.item .ctext::placeholder {
+  color: var(--muted);
+}
+
+.item:hover .ctext,
+.item .ctext:focus {
+  border-bottom-color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.item .del {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.item:hover .del {
+  opacity: 1;
+}
+
+.item .del:hover {
+  background: rgba(248, 113, 113, 0.15);
+  color: var(--danger);
+}
+
+#custom-items {
+  border-top: 1px dashed var(--border);
+  margin-top: 10px;
+  padding-top: 10px;
+}
+
+/* ---------- Plan modal ---------- */
+/* inset + auto margins are what actually centre a modal dialog: without them the
+   box keeps its static position and pops up in the top-left, far from the trigger. */
+dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 22px 24px;
+  width: min(480px, 92vw);
+  max-height: 86vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+/* Frost the whole page behind a dialog so only the open card reads. The dialog lives in
+   the top layer, so this also covers the fixed hanging bar without touching z-index. */
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(12px) saturate(0.72);
+  -webkit-backdrop-filter: blur(12px) saturate(0.72);
+}
+
+body.light dialog::backdrop {
+  background: rgba(248, 248, 248, 0.66);
+}
+
+.plan-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-head h2 {
+  font-size: 1.1rem;
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.modal-close:hover {
+  color: var(--text);
+}
+
+.plan-form input[type="text"] {
+  width: 100%;
+}
+
+#plan-edit-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pedit-row {
+  display: flex;
+  gap: 8px;
+}
+
+.pedit-row input {
+  flex: 1;
+}
+
+.plan-form .row-rm {
+  flex: none;
+  width: 38px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.plan-form .row-rm:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+/* ---------- Section headers with inline actions (计划项目 / 运动词条) ---------- */
+.head-row,
+.modal-ticker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.head-row {
+  margin: 2px 0;
+}
+
+.head-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.row-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-family: inherit;
+  padding: 4px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.row-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.plan-form button.secondary,
+.plan-form button.primary,
+.plan-form button.danger {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.92rem;
+}
+
+.plan-form button.secondary {
+  background: var(--panel-2);
+  color: var(--text);
+}
+
+.plan-form button.secondary:hover {
+  border-color: var(--accent);
+}
+
+.plan-form button.primary {
+  background: var(--accent);
+  color: #06121f;
+  border-color: var(--accent);
+}
+
+.plan-form button.primary:hover {
+  filter: brightness(1.1);
+}
+
+.plan-form button.danger {
+  background: transparent;
+  color: var(--danger);
+  border-color: var(--border);
+}
+
+.plan-form button.danger:hover:not(:disabled) {
+  border-color: var(--danger);
+}
+
+/* 新建空白计划时没有「当前计划」可删，禁用而不是隐藏，保持按钮位置稳定。 */
+.plan-form button.danger:disabled {
+  color: var(--muted);
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ---------- Modal ticker (inside plan modal) ---------- */
+.modal-ticker {
+  border-top: 1px dashed var(--border);
+  padding-top: 14px;
+  margin-top: 4px;
+}
+
+.modal-ticker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.modal-ticker-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.ticker-add-btn {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s ease;
+}
+
+.ticker-add-btn:hover {
+  border-color: var(--accent);
+}
+
+.ticker-chip {
+  flex: none;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-size: 0.88rem;
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+  user-select: none;
+}
+
+.ticker-chip:hover {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.ticker-add-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.ticker-add-form input {
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+}
+
+#ticker-label {
+  flex: 1;
+  min-width: 150px;
+}
+
+#ticker-target {
+  width: 100px;
+}
+
+#ticker-unit {
+  width: 80px;
+}
+
+/* ---------- Ticker toast ---------- */
+.ticker-toast {
+  margin-top: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent);
+  min-height: 1.2em;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.ticker-toast.show {
+  opacity: 1;
+}
+
+/* ---------- 计划编辑器：标题栏动作 + 新建提示 ---------- */
+.modal-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  padding: 4px 2px;
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s ease;
+}
+
+.link-btn:hover {
+  border-bottom-color: var(--accent);
+}
+
+/* 处于「新建空白」状态时，用一条浅色提示说明当前不是在编辑已有计划。 */
+.plan-new-hint {
+  background: var(--accent-dim);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.8rem;
+  padding: 7px 10px;
+  margin-bottom: 12px;
+}
+
+/* 底部动作区：破坏性的「删除」留在左侧，其余成组靠右，主次一眼可辨。 */
+.modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.modal-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.plan-form .modal-actions-right button:first-child {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  padding: 11px 16px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.plan-form .modal-actions-right button:first-child:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+/* ---------- Fullscreen hint ---------- */
+#fullscreen-hint {
+  position: fixed;
+  left: 50%;
+  bottom: 88px;
+  transform: translateX(-50%) translateY(16px);
+  background: rgba(20, 20, 20, 0.92);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 9px 16px;
+  border-radius: 999px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  z-index: 100;
+}
+
+#fullscreen-hint.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+#fullscreen-hint kbd {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  padding: 1px 6px;
+  font-size: 0.75rem;
+  color: var(--text);
+}
+
+/* ---------- Footer ---------- */
+.foot {
+  width: 100%;
+  max-width: var(--content-max);
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.foot a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.foot a:hover {
+  text-decoration: underline;
+}
+
+#save-status.saving {
+  color: var(--accent);
+}
+
+#save-status.error {
+  color: var(--danger);
+}
+
+/* ---------- 整屏两页系统 ----------
+   第 1 页 = 时钟 + 锻炼计划 + 三餐；第 2 页 = 身体数据录入 / 曲线 / 历史。
+   宽屏（>1320px，日历与倒计时悬浮在两侧）下两页并排在一条横向轨道里，
+   切换时整条轨道 translateX 滑动，像翻相册一样连续，不再有闪现感；
+   每一页各自占满视口高度，页内超长时页面自身滚动，滚轮推到边界即换页。
+   窄屏下侧栏要回流到文档中，因此退回普通连续滚动 + 直接显隐。 */
+
+.page {
+  width: 100%;
+  display: none;
+}
+
+.page.active {
+  display: block;
+}
+
+@media (min-width: 1321px) {
+  body {
+    height: 100vh;
+    overflow: hidden;
+    padding-bottom: 18px;
+  }
+
+  main.panel {
+    flex: 1;
+    min-height: 0;
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* 滑动轨道：.pages 是固定的裁剪窗口，移动的是窗口里的两页本身。
+     裁剪和位移绝不能放在同一个元素上——overflow:hidden 的裁剪区会跟着
+     transform 一起走，轨道自己左移时第 2 页会被裁到窗口外，永远看不见。
+     注意下面刻意用 `.pages > .page` 作用域：万一 HTML 里的轨道容器缺失或
+     与样式不同步，两页也不会被同时 display:block 排到彼此下方而被 overflow:hidden
+     裁掉，只会退回窄屏的显隐模式，第 2 页永远还能看到。 */
+  .pages {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    overflow: hidden;
+  }
+
+  .pages > .page {
+    display: block;
+    flex: 0 0 100%;
+    min-width: 0;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    /* overflow-y:auto 会连带把横向也变成裁剪，卡片的 box-shadow（40px 模糊）
+       会被页面盒子裁出直角切边。内边距必须盖住阴影的外扩量（约 20px 侧向、
+       10px 顶部），让阴影有地方落，不至于被裁掉。 */
+    padding: 12px 22px 20px;
+    transform: translateX(0);
+    transition: transform 0.38s cubic-bezier(0.33, 1, 0.68, 1);
+    will-change: transform;
+  }
+
+  .pages[data-index="1"] > .page {
+    transform: translateX(-100%);
+  }
+
+  .page::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
+
+  main.panel > .page-nav {
+    flex: none;
+    margin-top: 12px;
+  }
+
+  /* 大时钟按视口高度收敛，保证第 1 页的「时钟 + 计划 + 三餐」尽量一屏放下。 */
+  .hero {
+    padding: 2px 0 4px;
+  }
+
+  .time {
+    font-size: clamp(2.6rem, 8vh, 4.6rem);
+  }
+
+  .foot {
+    flex: none;
+    margin-top: 6px;
+  }
+}
+
+@media (min-width: 1321px) and (prefers-reduced-motion: reduce) {
+  .pages > .page {
+    transition: none;
+  }
+}
+
+/* 首屏取数失败的兜底提示：直接显示在项目列表里，避免页面静默半死。 */
+.init-failure {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.init-failure-btn {
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.init-failure-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.init-failure-btn:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+/* Page 2 history card: same panel feel, a bit more padding for charts. */
+.body-stats-history {
+  padding: 18px 20px;
+  margin: 0;
+}
+
+/* ---------- Flat page navigation (replacing the oversized triangles) ----------
+   These buttons are deliberately short, low-profile, and don't eat screen space. */
+.page-nav {
+  margin-top: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.nav-chevron {
+  width: 34px;
+  height: 26px;            /* flat, not tall — no more big triangles */
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  padding: 0;
+}
+
+.nav-chevron:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.nav-chevron:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.nav-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nav-dot {
+  background: transparent;
+  border: none;
+  padding: 4px 2px;
+  color: var(--border);
+  font-size: 0.55rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.15s ease, transform 0.15s ease;
+  letter-spacing: 1px;
+}
+
+.nav-dot:hover {
+  color: var(--muted);
+}
+
+.nav-dot.active {
+  color: var(--accent);
+  transform: scale(1.25);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hang-clock {
+    transition: none;
+  }
+}
+
+.body-stats {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+}
+
+.body-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.body-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.body-range {
+  display: flex;
+  gap: 4px;
+}
+
+.body-range button {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.body-range button:hover {
+  color: var(--text);
+}
+
+.body-range button.active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+/* 身体数据录入行：体重 / 体脂只是两三位数字，给固定窄宽（不随卡片拉伸），
+   整行靠左成组；两列共用同一轨道宽度，所以仍然严格对齐。 */
+.body-entry {
+  display: grid;
+  grid-template-columns: 112px 112px auto auto;
+  justify-content: start;
+  align-items: end;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.body-entry .field {
+  min-width: 0;
+}
+
+.body-entry input {
+  text-align: right;
+  padding: 8px 10px;
+  font-size: 0.9rem;
+  height: 37px;           /* 与记录按钮同高，两者在网格底边完全齐平 */
+}
+
+/* Carry-forward default: a grey hint, visually distinct from a typed value. */
+.body-entry input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+.body-save-btn {
+  background: var(--accent);
+  border: none;
+  color: #06121f;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  padding: 9px 18px;
+  white-space: nowrap;
+  font-size: 0.9rem;
+  height: 37px;           /* 与 input（8+8+1+1+~19 行高）等高，按钮与输入框基线齐平 */
+  transition: filter 0.15s ease;
+}
+
+body.light .body-save-btn {
+  color: #fff;
+}
+
+.body-save-btn:hover {
+  filter: brightness(1.1);
+}
+
+/* 删除按钮：与记录按钮同高的次要描边样式，红色只在 hover 时点亮，
+   避免在录入行里显得比「记录」更抢眼。 */
+.body-delete-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 10px;
+  cursor: pointer;
+  padding: 9px 14px;
+  white-space: nowrap;
+  font-size: 0.9rem;
+  height: 37px;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.body-delete-btn:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+/* BMI 行：数值 + 带色圆点徽章。四档配色独立成类，明暗主题都保持柔和。 */
+.body-bmi {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -4px 0 12px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.body-bmi:empty {
+  display: none;
+}
+
+.bmi-label {
+  font-weight: 600;
+}
+
+.bmi-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.bmi-hint {
+  font-size: 0.78rem;
+}
+
+.bmi-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px 2px 7px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.bmi-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.bmi-low {
+  color: #5b9bd9;
+  background: rgba(91, 155, 217, 0.14);
+}
+
+.bmi-normal {
+  color: var(--success-strong);
+  background: rgba(56, 145, 95, 0.14);
+}
+
+.bmi-over {
+  color: #d98a3d;
+  background: rgba(217, 138, 61, 0.15);
+}
+
+.bmi-obese {
+  color: var(--danger);
+  background: rgba(227, 118, 118, 0.15);
+}
+
+body.light .bmi-low { color: #2563eb; }
+body.light .bmi-normal { color: #15803d; }
+body.light .bmi-over { color: #d97706; }
+
+/* 折线图上的点可点击跳转日期：手型 + hover 加亮。 */
+.bc-dot {
+  cursor: pointer;
+}
+
+.bc-dot:hover {
+  stroke-width: 2.4;
+}
+
+.body-chart {
+  position: relative;
+}
+
+/* No history yet: keep the plot area as an empty sheet of ruled paper rather than
+   printing a sentence in it. */
+.body-chart:empty {
+  min-height: 133px;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 32px,
+    var(--border) 32px,
+    var(--border) 33px
+  );
+  background-position: bottom;
+  background-repeat: no-repeat;
+}
+
+.bc-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.bc-grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+/* 竖向网格线代表固定的天数间隔，比横线更淡一档，避免抢走数据线的注意力。 */
+.bc-vgrid {
+  stroke-dasharray: 2 4;
+  opacity: 0.55;
+}
+
+.bc-axis {
+  stroke: var(--border);
+  stroke-width: 1.2;
+}
+
+.bc-line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.bc-dot {
+  stroke: var(--panel-2);
+  stroke-width: 1.2;
+}
+
+.bc-weight {
+  color: var(--accent);
+}
+
+.bc-fat {
+  color: var(--accent-2);
+}
+
+.bc-weight.bc-line,
+.bc-weight.bc-dot {
+  stroke: var(--accent);
+}
+
+.bc-fat.bc-line,
+.bc-fat.bc-dot {
+  stroke: var(--accent-2);
+}
+
+.bc-weight.bc-dot {
+  fill: var(--accent);
+}
+
+.bc-fat.bc-dot {
+  fill: var(--accent-2);
+}
+
+text.bc-weight,
+text.bc-fat {
+  fill: currentColor;
+}
+
+text.bc-weight {
+  color: var(--accent);
+}
+
+text.bc-fat {
+  color: var(--accent-2);
+}
+
+.bc-tick,
+.bc-unit,
+.bc-x {
+  font-size: 9px;
+  font-family: inherit;
+}
+
+.bc-unit,
+.bc-x {
+  fill: var(--muted);
+}
+
+.bc-legend {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.bc-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 0.15s ease;
+}
+
+/* 图例被点掉（曲线隐藏）时整项变灰，提示可再次点击恢复。 */
+.bc-key.off {
+  opacity: 0.35;
+}
+
+.bc-swatch {
+  width: 12px;
+  height: 3px;
+  border-radius: 2px;
+  background: currentColor;
+}
+
+/* 健康体重参考线：绿色虚线，与打卡绿同族但更亮一档，区别于灰色网格线。 */
+.bc-target {
+  stroke: var(--success-strong);
+  stroke-width: 1.4;
+  stroke-dasharray: 5 4;
+}
+
+.bc-target-label {
+  font-size: 9px;
+  fill: var(--success-strong);
+}
+
+.bc-target-key {
+  color: var(--success-strong);
+}
+
+.body-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  align-items: center;
+  margin-top: 10px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.body-summary .bc-stat b {
+  font-weight: 700;
+}
+
+.bc-delta {
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.bc-delta.down {
+  color: var(--accent);
+}
+
+.bc-delta.up {
+  color: var(--danger);
+}
+
+.body-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.body-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 2px;
+  border-top: 1px solid var(--border);
+  font-size: 0.82rem;
+}
+
+.body-row .bd-date {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* History rows are editable in place: value + unit, then save / delete. */
+.body-row .bd-edit {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1 1 auto;
+  justify-content: flex-end;
+}
+
+.body-row .bd-field {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+
+.body-row input.bd-input {
+  width: 56px;
+  padding: 4px 6px;
+  font-size: 0.8rem;
+  text-align: right;
+}
+
+.body-row .bd-save {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  width: 26px;
+  height: 26px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.body-row .bd-save:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.body-row .del {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.body-row .del:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.meals-vertical {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.meals-col {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.meal-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.meal-icon {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.meal-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--text);
+  flex: 1;
+}
+
+.meal-count {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--panel);
+  border-radius: 999px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+
+.meals-col .items {
+  padding: 8px 12px;
+  min-height: 44px;
+}
+
+.meals-col .items .meal-empty {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 14px 0;
+  opacity: 0.6;
+  border: none;
+}
+
+.meals-col .item {
+  padding: 10px 4px;
+}
+
+.meals-col .item.meal-suggest {
+  border-top: 1px dashed var(--border);
+  border-bottom: none;
+  gap: 10px;
+  padding: 8px 4px;
+}
+
+.meal-suggest .suggest-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.88rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meal-suggest:hover .suggest-text {
+  color: var(--text);
+}
+
+.meal-suggest .del {
+  opacity: 0.55;
+  width: 22px;
+  height: 22px;
+  font-size: 0.72rem;
+}
+
+.meal-suggest .del:hover {
+  opacity: 1;
+}
+
+.meals-col .item .ctext {
+  font-size: 0.92rem;
+}
+
+/* ---------- Responsive ---------- */
+/* Below this the centred column leaves no side gutter, so both rails stop floating
+   and sit in the flow under the content. */
+@media (max-width: 1320px) {
+  .metro-rail,
+  .calendar-rail {
+    position: static;
+    transform: none;
+    width: 100%;
+    max-width: var(--content-max);
+    max-height: none;
+    overflow: visible;
+    margin-top: 18px;
+  }
+
+  .calendar-rail {
+    width: 100%;
+  }
+
+  .rail-pills {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .metro-pill {
+    width: 158px;
+    padding: 7px 8px 6px 12px;
+  }
+
+  .pill-time {
+    font-size: 1rem;
+  }
+
+  .rail-hint {
+    width: auto;
+  }
+}
+
+@media (max-width: 1000px) {
+  .auth-form {
+    justify-content: center;
+  }
+
+  .dashboard {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 720px) {
+  .meals-vertical {
+    grid-template-columns: 1fr;
+  }
+  /* 窄屏录入行同样用网格，只是把两个按钮独占一行，输入框仍保持等宽对齐。 */
+  .body-entry {
+    grid-template-columns: 112px 112px;
+    justify-content: start;
+  }
+  .body-entry .body-save-btn,
+  .body-entry .body-delete-btn {
+    grid-column: span 1;
+    width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  body {
+    padding: calc(var(--hang-h) + 10px) 12px 84px;
+  }
+
+  /* The button cluster owns the bar on a phone; only the time is mirrored there. */
+  .hang-clock {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 0.84rem;
+  }
+
+  .hang-clock #hang-date,
+  .hang-clock #hang-weekday,
+  .hang-clock .sep {
+    display: none;
+  }
+
+  .hang-time {
+    font-size: 0.95rem;
+  }
+
+  .top-bar-actions {
+    flex-shrink: 0;
+  }
+
+  /* 顶栏按钮变多后，窄屏把「数据」按钮收成纯图标，避免整栏换行挤压登录区。 */
+  #data-btn .data-btn-label {
+    display: none;
+  }
+
+  #data-btn {
+    padding: 0 8px;
+  }
+
+  .date-line {
+    font-size: 1.1rem;
+  }
+
+  .workout-card {
+    padding: 16px;
+  }
+
+  .item .name {
+    font-size: 0.95rem;
+  }
+
+  .card-head h1 {
+    font-size: 1rem;
+  }
+
+  .plan-title-select {
+    font-size: 1rem;
+    padding-right: 26px;
+  }
+
+  /* 窄屏下按钮收紧内边距，但保留文字，避免再次溢出边框。 */
+  #plan-edit-btn {
+    padding: 8px 10px;
+    font-size: 0.8rem;
+  }
+
+  .nav-chevron {
+    width: 30px;
+    height: 24px;
+  }
+
+  .auth-form input {
+    width: 100px;
+  }
+
+  .ticker-add-form {
+    flex-direction: column;
+  }
+
+  .ticker-add-form input {
+    width: 100%;
+  }
+}
