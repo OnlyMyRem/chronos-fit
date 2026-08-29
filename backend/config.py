@@ -25,6 +25,7 @@ _ENV_OVERRIDES = {
     "DATABASE_URL": ("database", "url"),
     "CHRONOSFIT_SQL_ECHO": ("database", "echo_sql"),
     "CHRONOSFIT_API_KEY": ("auth", "secret_key"),
+    "CHRONOSFIT_ADMIN_EMAILS": ("auth", "admin_emails"),
     "SMTP_HOST": ("smtp", "host"),
     "SMTP_PORT": ("smtp", "port"),
     "SMTP_USER": ("smtp", "user"),
@@ -58,6 +59,7 @@ class AuthConfig:
     resend_seconds: int = 60
     max_login_failures: int = 5
     lockout_minutes: int = 15
+    admin_emails: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -107,6 +109,19 @@ def _as_str(value: object, default: str) -> str:
         return default
     text = str(value).strip()
     return text or default
+
+
+def _admin_emails(value: object) -> tuple[str, ...]:
+    """Accept a YAML list or a comma-separated string, normalized to lowercase."""
+    if isinstance(value, (list, tuple)):
+        raw = value
+    else:
+        raw = str(value or "").split(",")
+    return tuple(
+        email.strip().lower()
+        for email in raw
+        if isinstance(email, str) and email.strip()
+    )
 
 
 def _read_yaml(path: Path) -> dict:
@@ -187,6 +202,7 @@ def load_config(explicit: str | os.PathLike[str] | None = None) -> Config:
                 auth.get("max_login_failures"), AuthConfig.max_login_failures
             ),
             lockout_minutes=_as_int(auth.get("lockout_minutes"), AuthConfig.lockout_minutes),
+            admin_emails=_admin_emails(auth.get("admin_emails")),
         ),
         smtp=SmtpConfig(
             host=str(smtp.get("host") or ""),

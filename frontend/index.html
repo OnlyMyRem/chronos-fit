@@ -412,10 +412,15 @@
     <label class="field">
       <span class="field-label" data-i18n="settingsTheme">主题</span>
       <select id="settings-theme">
+        <option value="system" data-i18n="themeSystem">跟随系统</option>
         <option value="dark" data-i18n="themeDark">深色</option>
         <option value="light" data-i18n="themeLight">浅色</option>
       </select>
     </label>
+
+    <!-- 仅管理员可见：由 app.js 在 /api/auth/me 返回 is_admin 时显示 -->
+    <button type="button" id="settings-admin-btn" class="auth-btn admin-entry"
+            style="display:none" data-i18n="adminPanel">后台管理</button>
 
     <div class="settings-profile">
       <span class="field-label" data-i18n="settingsProfile">身体信息</span>
@@ -452,6 +457,38 @@
       <button type="button" id="settings-save-pwd" class="auth-btn" data-i18n="savePassword">保存新密码</button>
     </form>
     <p class="settings-status" id="settings-status"></p>
+  </div>
+</dialog>
+
+<dialog id="admin-modal" class="panel-dialog admin-modal">
+  <div class="drawer-head">
+    <h2 data-i18n="adminTitle">后台管理</h2>
+    <button type="button" class="drawer-close" id="admin-close">✕</button>
+  </div>
+  <div class="drawer-body admin-body">
+    <div class="admin-stats" id="admin-stats"></div>
+
+    <div class="admin-pwd-note" data-i18n="adminPwdNote">
+      密码以「盐 + SHA-256」哈希形式存储（salt:hash），数据库里永远没有明文，管理员也无法查看或还原。
+    </div>
+
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th data-i18n="adminColId">ID</th>
+            <th data-i18n="adminColUser">用户名</th>
+            <th data-i18n="adminColEmail">邮箱</th>
+            <th data-i18n="adminColCreated">注册时间</th>
+            <th data-i18n="adminColRole">角色 / 状态</th>
+            <th data-i18n="adminColPassword">密码</th>
+            <th data-i18n="adminColActions">操作</th>
+          </tr>
+        </thead>
+        <tbody id="admin-users"></tbody>
+      </table>
+    </div>
+    <p class="admin-status" id="admin-status"></p>
   </div>
 </dialog>
 

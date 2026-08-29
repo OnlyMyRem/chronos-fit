@@ -67,6 +67,10 @@ class LangPayload(BaseModel):
     language: str
 
 
+class ThemePayload(BaseModel):
+    theme: str
+
+
 class ProfilePayload(BaseModel):
     gender: str | None = None
     height_cm: float | None = None

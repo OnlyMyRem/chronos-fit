@@ -47,10 +47,12 @@ class User(Base):
     failed_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     locked_until: Mapped[str | None] = mapped_column(String(32))
     language: Mapped[str] = mapped_column(String(8), nullable=False, default="zh")
+    theme: Mapped[str] = mapped_column(String(8), nullable=False, default="system")
     gender: Mapped[str | None] = mapped_column(String(8))
     height_cm: Mapped[float | None] = mapped_column(Float)
     metronomes_seeded: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     ticker_cleared: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    is_admin: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
 
 class AuthSession(Base):

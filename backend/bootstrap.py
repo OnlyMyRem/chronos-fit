@@ -6,12 +6,12 @@ side effect (the old module ran ``init_db()`` at import time).
 
 from __future__ import annotations
 
-from sqlalchemy import Engine, text
+from sqlalchemy import Engine, text, update
 from sqlalchemy.orm import Session
 
 from . import db
 from .config import Config
-from .models import Base
+from .models import Base, User
 from .seeds import seed_defaults
 
 EMAIL_INDEX = "idx_users_email"
@@ -100,6 +100,18 @@ def _ensure_email_index(engine: Engine, session: Session) -> None:
     )
 
 
+def _sync_admins(session: Session, cfg: Config) -> None:
+    """Config-listed emails become admins on every startup; re-adding an email
+    to the config re-promotes the account even if it was demoted meanwhile."""
+    if not cfg.auth.admin_emails:
+        return
+    session.execute(
+        update(User)
+        .where(User.email.in_(cfg.auth.admin_emails))
+        .values(is_admin=1)
+    )
+
+
 def bootstrap(cfg: Config) -> Engine:
     engine = db.configure(cfg)
     Base.metadata.create_all(engine, checkfirst=True)
@@ -108,5 +120,6 @@ def bootstrap(cfg: Config) -> Engine:
         _normalize_blank_emails(session)
         session.flush()
         _ensure_email_index(engine, session)
+        _sync_admins(session, cfg)
         seed_defaults(session)
     return engine

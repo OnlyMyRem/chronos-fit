@@ -147,10 +147,25 @@
       genderUnset: "未填写", genderMale: "男", genderFemale: "女",
       saveProfile: "保存资料", profileSaved: "资料已保存",
       heightRangeErr: "身高需在 50–250 cm 之间",
-      themeDark: "深色", themeLight: "浅色",
+      themeDark: "深色", themeLight: "浅色", themeSystem: "跟随系统",
       settingsPassword: "修改密码", oldPasswordPh: "原密码", newPasswordPh: "新密码（至少 6 位）",
       savePassword: "保存新密码", passwordNeedBoth: "请填写原密码和新密码",
       passwordSaved: "密码已更新",
+      // admin panel
+      adminPanel: "后台管理", adminTitle: "后台管理",
+      adminPwdNote: "密码以「盐 + SHA-256」哈希形式存储（salt:hash），数据库里永远没有明文，管理员也无法查看或还原。",
+      adminColId: "ID", adminColUser: "用户名", adminColEmail: "邮箱", adminColCreated: "注册时间",
+      adminColRole: "角色 / 状态", adminColPassword: "密码", adminColActions: "操作",
+      adminStatTotal: "注册用户", adminStatToday: "今日新增", adminStatAdmins: "管理员", adminStatLocked: "已锁定",
+      adminRoleAdmin: "管理员", adminRoleUser: "用户",
+      adminStatusLocked: "已锁定", adminStatusNormal: "正常",
+      adminLock: "锁定", adminUnlock: "解锁",
+      adminMakeAdmin: "设为管理员", adminRemoveAdmin: "取消管理员",
+      adminLoading: "加载中…", adminEmpty: "暂无用户",
+      adminLoadFail: "加载失败，请重试", adminOpFailed: "操作失败，请重试",
+      adminConfirmToggle: "确定切换 {x} 的管理员权限吗？",
+      adminConfirmLock: "确定锁定用户 {x} 吗？锁定后该账号无法登录。",
+      adminConfirmUnlock: "确定解锁用户 {x} 吗？",
     },
     en: {
       signIn: "Sign in", signOut: "Sign out", signInBtn: "Sign in", signUpBtn: "Sign up", resetBtn: "Reset password",
@@ -277,11 +292,26 @@
       genderUnset: "Not set", genderMale: "Male", genderFemale: "Female",
       saveProfile: "Save profile", profileSaved: "Profile saved",
       heightRangeErr: "Height must be 50–250 cm",
-      themeDark: "Dark", themeLight: "Light",
+      themeDark: "Dark", themeLight: "Light", themeSystem: "Follow system",
       settingsPassword: "Change password", oldPasswordPh: "Current password",
       newPasswordPh: "New password (min 6 chars)",
       savePassword: "Save new password", passwordNeedBoth: "Fill in both passwords",
       passwordSaved: "Password updated",
+      // admin panel
+      adminPanel: "Admin panel", adminTitle: "Admin panel",
+      adminPwdNote: "Passwords are stored as salted SHA-256 hashes (salt:hash). Plaintext never touches the database, and admins cannot view or recover them.",
+      adminColId: "ID", adminColUser: "Username", adminColEmail: "Email", adminColCreated: "Joined",
+      adminColRole: "Role / Status", adminColPassword: "Password", adminColActions: "Actions",
+      adminStatTotal: "Users", adminStatToday: "New today", adminStatAdmins: "Admins", adminStatLocked: "Locked",
+      adminRoleAdmin: "Admin", adminRoleUser: "User",
+      adminStatusLocked: "locked", adminStatusNormal: "active",
+      adminLock: "Lock", adminUnlock: "Unlock",
+      adminMakeAdmin: "Promote", adminRemoveAdmin: "Demote",
+      adminLoading: "Loading…", adminEmpty: "No users",
+      adminLoadFail: "Failed to load — try again", adminOpFailed: "Operation failed — try again",
+      adminConfirmToggle: "Toggle admin rights for {x}?",
+      adminConfirmLock: "Lock user {x}? They won't be able to sign in.",
+      adminConfirmUnlock: "Unlock user {x}?",
     },
   };
 
@@ -377,22 +407,54 @@
   }
 
   // ---------- Theme ----------
-  function applyTheme(isLight) {
+  // 三态主题：system（跟随系统）/ dark / light。
+  // 游客默认跟随系统（prefers-color-scheme）；登录用户在设置里三选一，
+  // 持久化到账号（跨设备一致），并实时监听系统明暗变化。
+  let themeMode = "system";
+  const systemLightMQ = window.matchMedia("(prefers-color-scheme: light)");
+
+  function applyThemeMode(mode) {
+    themeMode = mode === "dark" || mode === "light" ? mode : "system";
+    const isLight =
+      themeMode === "light" || (themeMode === "system" && systemLightMQ.matches);
     document.body.classList.toggle("light", isLight);
-    localStorage.setItem("chronosfit_theme", isLight ? "light" : "dark");
     syncTopBarButtons();
-    if ($("settings-theme")) $("settings-theme").value = isLight ? "light" : "dark";
+    if ($("settings-theme")) $("settings-theme").value = themeMode;
   }
 
   function initTheme() {
-    applyTheme(localStorage.getItem("chronosfit_theme") === "light");
+    const stored = localStorage.getItem("chronosfit_theme");
+    applyThemeMode(
+      stored === "dark" || stored === "light" || stored === "system" ? stored : "system"
+    );
+  }
+
+  function persistTheme(mode) {
+    if (isLoggedIn) {
+      fetch("/api/auth/theme", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ theme: mode }),
+      }).catch(() => {});
+    } else {
+      localStorage.setItem("chronosfit_theme", mode);
+    }
   }
 
   function toggleTheme() {
-    applyTheme(!document.body.classList.contains("light"));
+    // 顶栏按钮：在「跟随系统」下点击 = 固定为当前实际明暗的反面；
+    // 已是固定模式则继续在深 / 浅之间切换。
+    const next = document.body.classList.contains("light") ? "dark" : "light";
+    applyThemeMode(next);
+    persistTheme(next);
   }
 
   initTheme();
+
+  // 跟随系统模式下，系统明暗变化时实时切换。
+  systemLightMQ.addEventListener("change", () => {
+    if (themeMode === "system") applyThemeMode("system");
+  });
 
   // ---------- App state ----------
   let plans = {};
@@ -494,10 +556,15 @@
     currentUser = data.user;
     updateAuthUI();
     if (isLoggedIn && currentUser.language) applyLang(currentUser.language);
+    if (isLoggedIn && currentUser.theme) applyThemeMode(currentUser.theme);
   }
 
   function updateAuthUI() {
     setAccountMenu(false);
+    const adminBtn = $("settings-admin-btn");
+    if (adminBtn) {
+      adminBtn.style.display = currentUser && currentUser.is_admin ? "inline-block" : "none";
+    }
     if (isLoggedIn) {
       $("auth-open-btn").style.display = "none";
       $("auth-user").style.display = "flex";
@@ -713,11 +780,164 @@
       if (e.target === e.currentTarget) modal.close();
     });
     $("settings-lang").addEventListener("change", (e) => setLang(e.target.value));
-    $("settings-theme").addEventListener("change", (e) => applyTheme(e.target.value === "light"));
+    $("settings-theme").addEventListener("change", (e) => {
+      applyThemeMode(e.target.value);
+      persistTheme(e.target.value);
+    });
     $("settings-save-profile").addEventListener("click", saveProfile);
     $("settings-save-pwd").addEventListener("click", saveNewPassword);
     $("settings-new-pwd").addEventListener("keydown", (e) => {
       if (e.key === "Enter") saveNewPassword();
+    });
+  }
+
+  // ---------- Admin panel ----------
+  function setAdminStatus(msg, cls) {
+    const el = $("admin-status");
+    el.textContent = msg || "";
+    el.className = "admin-status" + (cls ? " " + cls : "");
+  }
+
+  async function loadAdminData() {
+    setAdminStatus(t("adminLoading"));
+    try {
+      const [statsRes, usersRes] = await Promise.all([
+        fetch("/api/admin/stats"),
+        fetch("/api/admin/users"),
+      ]);
+      const stats = await statsRes.json().catch(() => ({}));
+      const usersData = await usersRes.json().catch(() => ({}));
+      if (!statsRes.ok || !usersRes.ok) {
+        setAdminStatus(stats.detail || usersData.detail || t("adminLoadFail"), "error");
+        return;
+      }
+      renderAdminStats(stats);
+      renderAdminUsers(usersData.users || []);
+      setAdminStatus("");
+    } catch {
+      setAdminStatus(t("adminLoadFail"), "error");
+    }
+  }
+
+  function renderAdminStats(stats) {
+    $("admin-stats").innerHTML = [
+      [t("adminStatTotal"), stats.total],
+      [t("adminStatToday"), stats.today_new],
+      [t("adminStatAdmins"), stats.admins],
+      [t("adminStatLocked"), stats.locked],
+    ]
+      .map(
+        ([label, value]) =>
+          `<div class="stat-card"><b>${value ?? 0}</b><span>${label}</span></div>`
+      )
+      .join("");
+  }
+
+  // 表格行用 createElement + textContent 渲染，杜绝用户名 / 邮箱里的 HTML 注入。
+  function renderAdminUsers(users) {
+    const tbody = $("admin-users");
+    tbody.innerHTML = "";
+    if (!users.length) {
+      const tr = document.createElement("tr");
+      const td = document.createElement("td");
+      td.colSpan = 7;
+      td.textContent = t("adminEmpty");
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+      return;
+    }
+    for (const u of users) {
+      const tr = document.createElement("tr");
+
+      const tdId = document.createElement("td");
+      tdId.textContent = u.id;
+      tr.appendChild(tdId);
+
+      const tdUser = document.createElement("td");
+      tdUser.textContent = u.username;
+      tr.appendChild(tdUser);
+
+      const tdEmail = document.createElement("td");
+      tdEmail.textContent = u.email || "—";
+      tr.appendChild(tdEmail);
+
+      const tdCreated = document.createElement("td");
+      tdCreated.className = "admin-created";
+      tdCreated.textContent = (u.created_at || "").replace("T", " ").slice(0, 16);
+      tr.appendChild(tdCreated);
+
+      const tdRole = document.createElement("td");
+      tdRole.textContent =
+        (u.is_admin ? t("adminRoleAdmin") : t("adminRoleUser")) +
+        (u.locked ? " · " + t("adminStatusLocked") : "");
+      tr.appendChild(tdRole);
+
+      const tdPwd = document.createElement("td");
+      tdPwd.className = "admin-hash";
+      const hash = u.password_hash || "";
+      tdPwd.textContent = hash ? `${hash.slice(0, 18)}…` : "—";
+      tdPwd.title = hash || "";
+      tr.appendChild(tdPwd);
+
+      const tdActions = document.createElement("td");
+      tdActions.className = "admin-actions";
+
+      const isSelf = currentUser && currentUser.id === u.id;
+      const btnAdmin = document.createElement("button");
+      btnAdmin.type = "button";
+      btnAdmin.textContent = u.is_admin ? t("adminRemoveAdmin") : t("adminMakeAdmin");
+      btnAdmin.disabled = !!isSelf;
+      btnAdmin.addEventListener("click", () => adminToggleAdmin(u));
+      tdActions.appendChild(btnAdmin);
+
+      const btnLock = document.createElement("button");
+      btnLock.type = "button";
+      btnLock.textContent = u.locked ? t("adminUnlock") : t("adminLock");
+      btnLock.disabled = !!isSelf;
+      btnLock.addEventListener("click", () => adminToggleLock(u));
+      tdActions.appendChild(btnLock);
+
+      tr.appendChild(tdActions);
+      tbody.appendChild(tr);
+    }
+  }
+
+  async function adminToggleAdmin(user) {
+    if (!confirm(t("adminConfirmToggle", { x: user.email || user.username }))) return;
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}/toggle-admin`, { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setAdminStatus(data.detail || t("adminOpFailed"), "error"); return; }
+      await loadAdminData();
+    } catch {
+      setAdminStatus(t("adminOpFailed"), "error");
+    }
+  }
+
+  async function adminToggleLock(user) {
+    const action = user.locked ? "unlock" : "lock";
+    const confirmKey = action === "lock" ? "adminConfirmLock" : "adminConfirmUnlock";
+    if (!confirm(t(confirmKey, { x: user.email || user.username }))) return;
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}/${action}`, { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setAdminStatus(data.detail || t("adminOpFailed"), "error"); return; }
+      await loadAdminData();
+    } catch {
+      setAdminStatus(t("adminOpFailed"), "error");
+    }
+  }
+
+  function setupAdminModal() {
+    const modal = $("admin-modal");
+    $("admin-close").addEventListener("click", () => modal.close());
+    modal.addEventListener("click", (e) => {
+      if (e.target === e.currentTarget) modal.close();
+    });
+    $("settings-admin-btn").addEventListener("click", () => {
+      $("settings-modal").close();
+      modal.showModal();
+      loadAdminData();
     });
   }
 
@@ -859,6 +1079,8 @@
     currentUser = null;
     updateAuthUI();
     applyLang(localStorage.getItem("chronosfit_lang") || "zh");
+    // 退出后回到游客主题：本机显式设置优先，否则跟随系统。
+    applyThemeMode(localStorage.getItem("chronosfit_theme") || "system");
     loaded = true;
     await reloadPlans();
     reloadAll();
@@ -3097,6 +3319,7 @@
     setupAccountMenu();
     setupTopBarButtons();
     setupSettingsModal();
+    setupAdminModal();
     setupPageNav();
 
     $("cal-prev").addEventListener("click", calPrev);

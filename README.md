@@ -25,8 +25,9 @@
 | 倒计时胶囊 | 页面右侧常驻胶囊，进页面即从 2 分钟 / 5 分钟开始走，到点响铃并自动重来；可新增、改名、改时长、暂停、删除，每个账号各存各的。点 ✎ 编辑时，对应的胶囊就地拉长，编辑表单直接显示在这只胶囊里面；新增计时器则多出一只虚线草稿胶囊承载表单，到点脉冲也不会撑出横向滚动条 |
 | 提示音 | 三音叮咚 / 清铃 / 电子蜂鸣（本地合成，离线可用）+ 两个在线音效，编辑气泡里可试听 |
 | 中英双语 | 右上角一键切换，语言写入账号（登录后跨设备保留） |
-| 日夜主题 | 黑白双主题，全部表单控件都随主题变色 |
-| 账号体系 | 邮箱注册 / 登录，验证码走邮件，密码连续错误临时锁定；登录后右上角只剩一枚圆形头像，点开是「设置」和「退出」两项菜单，设置里可改语言、主题、密码，并填写身体信息（性别 / 身高，用于 BMI） |
+| 日夜主题 | 深浅双主题，全部表单控件随主题变色。未登录访客**默认跟随系统明暗**（`prefers-color-scheme`，系统切换时实时跟随）；登录用户可在设置里三选一（跟随系统 / 深色 / 浅色），偏好写入账号、跨设备保留 |
+| 账号体系 | 邮箱注册 / 登录，验证码走邮件，密码连续错误临时锁定；登录后右上角只剩一枚圆形头像，点开是「设置」和「退出」两项菜单，设置里可改语言、主题、密码，并填写身体信息（性别 / 身高，用于 BMI）；管理员账号（见配置 `auth.admin_emails`）在设置里多一枚「后台管理」入口 |
+| 后台管理 | 管理员可查看注册用户统计（总数 / 今日新增 / 管理员数 / 锁定数）与用户列表（邮箱、注册时间、角色状态、密码哈希），并可直接锁定 / 解锁账号、授予 / 收回管理员权限；密码只存哈希，后台同样看不到明文 |
 | 数据导出 | 顶栏「数据」按钮里打开导出弹窗，选时间范围（近 7 / 30 天、本月、全部或自定义起止），一键下载 JSON 或 CSV：锻炼打卡 + 自定义项目 + 三餐 + 身体数据全在里面。CSV 带 BOM，Excel 双击即开 |
 | 数据导入 | 「数据」按钮里点「导入数据…」，选一个 `.csv` 或 `.xlsx` 文件，把锻炼记录、自定义项目、三餐、体重体脂一次性导回（与导出格式完全对齐，导出再导入是无损往返）；认不出的行会被跳过并计数，不会让整个导入失败 |
 
@@ -53,6 +54,7 @@ chronos-fit/
 │   │   ├── __init__.py      # 包标记
 │   │   ├── deps.py          # 依赖注入 + 请求体模型
 │   │   ├── auth.py          # 注册 / 登录 / 验证码 / 锁定 / 身体信息
+│   │   ├── admin.py         # 后台管理：统计、用户列表、管理员 / 锁定管理
 │   │   ├── plans.py         # 计划增删改查
 │   │   ├── workouts.py      # 打卡与自定义项目
 │   │   ├── meals.py         # 三餐
@@ -170,6 +172,7 @@ auth:
   resend_seconds: 60      # 同邮箱同用途的重发冷却
   max_login_failures: 5   # 连续失败多少次后临时锁定
   lockout_minutes: 15     # 临时锁定时长（分钟）
+  admin_emails: []        # 后台管理员邮箱列表（见下文「后台管理」），环境变量 CHRONOSFIT_ADMIN_EMAILS（逗号分隔）可覆盖
 database:
   echo_sql: false         # true = 打印每条 SQL，排查用
   pool_recycle_seconds: 3600   # MySQL 空闲超时前主动重连
@@ -182,6 +185,7 @@ database:
 - **锁定**：密码连续错 5 次 → 账号临时锁定 15 分钟，提示会写明还剩几次机会。
 - **解锁 / 忘记密码**：登录框里点「忘记密码?」→ 用邮箱验证码设置新密码，成功后立即解除锁定。
 - **改密码**：登录后点右上角头像 → 设置 → 填原密码与新密码。改成功同样会清掉锁定与失败计数。
+- **后台管理**：把管理员邮箱写进配置 `auth.admin_emails`（列表，或环境变量 `CHRONOSFIT_ADMIN_EMAILS` 逗号分隔），重启后对应邮箱的账号即为管理员——设置弹窗里出现「后台管理」入口：注册用户统计（总数 / 今日新增 / 管理员数 / 锁定数）、用户列表（邮箱、注册时间、角色状态、密码哈希），支持授予 / 收回管理员、锁定 / 解锁账号。**密码始终只存 `salt:sha256` 哈希**，管理面板里展示的也是哈希而非明文，任何角色（包括管理员）都无法还原真实密码。启动时会自动把列表中的邮箱标记为管理员，注册时同样即时生效；从列表移除邮箱后，需重启并手动在后台收回其权限。
 - 密码以 `salt:sha256` 形式存储，不保存明文；会话令牌是 64 位随机十六进制。
 
 ### 4. Docker 部署
@@ -304,7 +308,20 @@ docker compose exec mysql sh -c 'mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" chron
 | GET | `/api/auth/me` | — |
 | POST | `/api/auth/password` | `{old_password, new_password}`，需登录；新密码 ≥6 位，原密码不符返回 400 |
 | POST | `/api/auth/language` | `{language}`，`zh` \| `en` |
+| POST | `/api/auth/theme` | `{theme}`，`system` \| `dark` \| `light`，需登录；持久化到账号，`/api/auth/me` 一并返回 |
 | POST | `/api/auth/profile` | `{gender?, height_cm?}`，需登录；性别 `male` \| `female` \| null，身高 50–250 cm 或 null；用于 BMI 计算 |
+
+### 后台管理（需管理员）
+
+管理员身份：登录用户邮箱命中 `auth.admin_emails`（或环境变量 `CHRONOSFIT_ADMIN_EMAILS`）。非管理员一律 `403`。
+
+| Method | Path | 请求体 / 参数 |
+| --- | --- | --- |
+| GET | `/api/admin/stats` | 返回 `{total, today_new, admins, locked}`（总数 / 今日新增 / 管理员数 / 锁定数） |
+| GET | `/api/admin/users` | 用户列表（倒序）：`id, username, email, created_at, language, theme, is_admin, locked, failed_attempts, password_hash`（哈希而非明文） |
+| POST | `/api/admin/users/{id}/toggle-admin` | 授予 / 收回管理员，不能操作自己 |
+| POST | `/api/admin/users/{id}/lock` | 锁定账号（期间无法登录） |
+| POST | `/api/admin/users/{id}/unlock` | 解锁并清空失败计数 |
 
 ### 计划与词条
 
@@ -405,7 +422,7 @@ print(done.groupby("计划")["已完成"].apply(lambda s: (s == "是").mean()))
 
 | 表 | 用途 | 关键约束 |
 | --- | --- | --- |
-| `users` | 账号 | `username` 唯一；`email` 唯一（无邮箱时存 NULL，不存空串）；`failed_attempts` / `locked_until` 支撑锁定；`metronomes_seeded` 记录默认倒计时是否已发放；`ticker_cleared` 记录该账号是否清空过系统词条；`gender` / `height_cm` 为身体信息（BMI 输入项） |
+| `users` | 账号 | `username` 唯一；`email` 唯一（无邮箱时存 NULL，不存空串）；`failed_attempts` / `locked_until` 支撑锁定；`metronomes_seeded` 记录默认倒计时是否已发放；`ticker_cleared` 记录该账号是否清空过系统词条；`gender` / `height_cm` 为身体信息（BMI 输入项）；`theme` 为主题偏好（`system` / `dark` / `light`，默认 `system`，游客不受影响）；`is_admin` 为后台管理员标记（0 / 1） |
 | `sessions` | 登录态 | `token` 主键 |
 | `email_codes` | 验证码 | `email + purpose + id` 索引，只取最新一条 |
 | `plans` | 计划 | `(plan_name, user_id)` 唯一；`items` 为 JSON 文本 |
@@ -427,3 +444,4 @@ print(done.groupby("计划")["已完成"].apply(lambda s: (s == "是").mean()))
 - 默认计划、运动词条与倒计时现在定义在 `backend/seeds.py`，改这里就能换种子数据；种子按名称幂等补齐，已存在的计划不会被覆盖。
 - 旧库里带星期前缀的默认计划（`Tuesday - Upper Body Power` 等）会在启动时**就地改名**为不带前缀的新名字，打卡记录里的计划标签一并跟上，不会留下一份重名的双胞胎；星期信息只存在 `plans.weekday` 绑定里。
 - 三处行为修正：验证码填错不再作废（原先失败会永久烧掉验证码）；本人计划的星期绑定不再被同名系统计划抢走；历史脏口令散列不会再让登录接口 500。
+- 新增列 `users.theme`（主题偏好）与 `users.is_admin`（后台管理员标记）启动时自动补齐，老库无需手工迁移；在配置里加 `auth.admin_emails` 并重启即可启用后台管理。

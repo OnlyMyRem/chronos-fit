@@ -10,7 +10,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import db
-from .api import auth, body, imports, meals, metronomes, plans, reports, ticker, workouts
+from .api import admin, auth, body, imports, meals, metronomes, plans, reports, ticker, workouts
 from .bootstrap import bootstrap
 from .config import FRONTEND_DIR, Config, load_config
 
@@ -38,7 +38,7 @@ def create_app(cfg: Config | None = None) -> FastAPI:
         allow_headers=["*"],
     )
 
-    for module in (auth, plans, workouts, meals, body, ticker, metronomes, reports, imports):
+    for module in (admin, auth, plans, workouts, meals, body, ticker, metronomes, reports, imports):
         app.include_router(module.router)
 
     # 前端是单文件无构建的纯静态资源，且迭代频繁。给它 no-cache 而不是

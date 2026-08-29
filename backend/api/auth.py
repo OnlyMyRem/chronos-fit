@@ -35,6 +35,7 @@ from .deps import (
     ResetPayload,
     SendCodePayload,
     SessionToken,
+    ThemePayload,
 )
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -158,6 +159,7 @@ def register(payload: RegisterPayload, response: Response, session: DbSession, c
             email=email,
             failed_attempts=0,
             language=lang,
+            is_admin=1 if email in cfg.auth.admin_emails else 0,
         )
         session.add(user)
         session.flush()
@@ -244,6 +246,8 @@ def auth_me(uid: CurrentUid, session: DbSession):
             "username": user.username,
             "email": user.email,
             "language": _language(user.language),
+            "theme": user.theme or "system",
+            "is_admin": bool(user.is_admin),
             "gender": user.gender,
             "height_cm": user.height_cm,
         }
@@ -275,6 +279,17 @@ def set_language(payload: LangPayload, uid: CurrentUid, session: DbSession):
     lang = _language(payload.language)
     session.execute(update(User).where(User.id == uid).values(language=lang))
     return {"ok": True, "language": lang}
+
+
+@router.post("/theme")
+def set_theme(payload: ThemePayload, uid: CurrentUid, session: DbSession):
+    if not uid:
+        raise HTTPException(401, "请先登录")
+    theme = (payload.theme or "").strip()
+    if theme not in ("system", "dark", "light"):
+        raise HTTPException(400, "主题仅支持 system / dark / light")
+    session.execute(update(User).where(User.id == uid).values(theme=theme))
+    return {"ok": True, "theme": theme}
 
 
 @router.post("/profile")
