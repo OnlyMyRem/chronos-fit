@@ -1,5 +1,7 @@
-# 镜像只带代码，数据与本机配置一律从挂载进来
-data/
+# 镜像只带代码，数据与本机配置一律从挂载进来；
+# 例外：config.example.yaml 模板要进镜像，供入口脚本首次启动生成配置
+data/*
+!data/config.example.yaml
 config.yaml
 .env
 

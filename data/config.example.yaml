@@ -1,13 +1,17 @@
 # ChronosFit 配置文件模板
 #
-# 用法：复制本文件为 config.yaml 后按需修改。
-#   cp config.example.yaml config.yaml
+# 用法：把本文件复制为 data/config.yaml 后按需修改：
+#   cp data/config.example.yaml data/config.yaml
 # config.yaml 已被 .gitignore 忽略，密码不会进版本库。
 #
 # 说明：
+#   - 本地直接运行（python -m backend.main）与 Docker 部署读的都是 data/config.yaml，
+#     配置文件与 SQLite 数据库、本模板放在同一个目录，不易改错位置。
 #   - 本文件不存在时程序照常启动，全部使用下面的默认值（SQLite + 开发者模式邮箱）。
 #   - 每一项都可以用注释里标注的环境变量覆盖，方便 Docker / K8s 注入密钥而无需改文件。
 #   - 环境变量优先级高于本文件。
+#   - 为兼容旧版本，项目根目录的 config.yaml 仍会被读取（优先级低于 data/config.yaml）。
+#   - 修改配置后必须重启服务才生效（配置只在启动时读一次）。
 
 server:
   host: 0.0.0.0            # 覆盖：CHRONOSFIT_HOST
@@ -72,6 +76,6 @@ auth:
 smtp:
   host: ""                 # 例：smtp.qq.com
   port: 465                # 465 = SSL 直连；587（或其他）= STARTTLS
-  user: ""                 # 例：123456789@qq.com —— 同时也是默认发件人
+  user: ""                 # 例：123456789@qq.com —— SMTP 登录账号（用于连接认证）
   password: ""             # SMTP 授权码 / 应用专用密码，不是登录密码
-  sender: ""               # 发件人地址，留空则等于 user
+  sender: ""               # 邮件「发件人」地址（From），一般与 user 相同；留空则等于 user

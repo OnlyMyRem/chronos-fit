@@ -122,8 +122,18 @@ def _resolve_path(path: Path) -> Path:
 
 
 def config_path(explicit: str | os.PathLike[str] | None = None) -> Path | None:
-    """Explicit argument > CHRONOSFIT_CONFIG > ./config.yaml, or None for pure defaults."""
-    for candidate in (explicit, os.environ.get("CHRONOSFIT_CONFIG"), ROOT_DIR / "config.yaml"):
+    """Explicit argument > CHRONOSFIT_CONFIG > ./data/config.yaml > ./config.yaml (legacy).
+
+    Both the local run and the Docker image read data/config.yaml by default —
+    the config, the SQLite file and the template live side by side. The project
+    root config.yaml stays as a compatibility fallback for older deployments.
+    """
+    for candidate in (
+        explicit,
+        os.environ.get("CHRONOSFIT_CONFIG"),
+        DATA_DIR / "config.yaml",
+        ROOT_DIR / "config.yaml",
+    ):
         if not candidate:
             continue
         path = _resolve_path(Path(candidate))

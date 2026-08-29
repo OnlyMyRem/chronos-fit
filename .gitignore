@@ -5,8 +5,10 @@ __pycache__/
 config.yaml
 
 # runtime data (SQLite file / MySQL volume target)
+# 模板进版本库，方便直接 cp data/config.example.yaml data/config.yaml
 data/*
 !data/.gitkeep
+!data/config.example.yaml
 
 # local virtualenv
 .venv/

@@ -70,9 +70,9 @@ chronos-fit/
 │   ├── index.html           # 页面结构（两页滑动 + 共用时钟头）
 │   ├── style.css            # 全部样式（深浅主题、CSS 变量）
 │   └── app.js               # 全部交互逻辑（零依赖原生 JS）
-├── data/                    # 运行时数据（内容已 gitignore）
-│   └── .gitkeep             # 占位，保证空目录进版本库
-├── config.example.yaml      # 配置模板，逐项带注释
+├── data/                    # 运行时数据与配置（数据库 / config.yaml / 模板）
+│   ├── .gitkeep             # 占位，保证空目录进版本库
+│   └── config.example.yaml  # 配置模板，逐项带注释
 ├── Dockerfile               # 镜像构建（Python 3.12 slim）
 ├── docker-compose.yml       # 编排：应用 + 可选 MySQL（profile）
 ├── docker-entrypoint.sh     # 容器入口：首次启动把配置模板写进 /app/data
@@ -108,10 +108,14 @@ uvicorn backend.main:app --host 0.0.0.0 --port 18000
 复制模板按需修改，`config.yaml` 已被 gitignore，密码不会进版本库：
 
 ```bash
-cp config.example.yaml config.yaml     # Windows PowerShell: Copy-Item config.example.yaml config.yaml
+cp data/config.example.yaml data/config.yaml    # Windows PowerShell: Copy-Item data/config.example.yaml data/config.yaml
 ```
 
-配置优先级：**环境变量 > `config.yaml` > 内置默认值**。查找 `config.yaml` 的顺序是 `CHRONOSFIT_CONFIG` 指向的路径 → 项目根 `config.yaml`；两处都没有就用默认值直接启动（SQLite + 开发者模式邮箱），所以「零配置跑起来」是支持的。
+> **配置文件在哪**：本地直接运行（`python -m backend.main`）与 Docker 部署读的都是 **`data/config.yaml`**（Docker 里容器路径 `/app/data/config.yaml`，由 `./data:/app/data` 挂载映射；首次启动自动从模板生成，已存在则不覆盖）。配置、SQLite 数据库、模板都放在 `data/` 同一个目录里，不会再改错文件。改完配置要**重启服务**才生效（配置只在启动时读一次）：本地重启进程，Docker 执行 `docker compose restart chronosfit`。
+>
+> 为兼容旧版本，项目根目录的 `config.yaml` 仍会被读取（优先级低于 `data/config.yaml`），新部署请直接使用 `data/config.yaml`。
+
+配置优先级：**环境变量 > `config.yaml` > 内置默认值**。查找 `config.yaml` 的顺序是 `CHRONOSFIT_CONFIG` 指向的路径 → `data/config.yaml` → 项目根 `config.yaml`（兼容旧部署）；都没有就用默认值直接启动（SQLite + 开发者模式邮箱），所以「零配置跑起来」是支持的。
 
 #### 2.1 数据库（SQLite / MySQL 二选一）
 
@@ -146,9 +150,9 @@ CREATE DATABASE chronosfit CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 smtp:
   host: smtp.qq.com
   port: 465              # 465 = SSL 直连；587 等其他端口会自动改用 STARTTLS
-  user: 123456789@qq.com # 同时也是默认发件人
+  user: 123456789@qq.com # SMTP 登录账号（用于连接认证）
   password: 你的SMTP授权码
-  sender: ""             # 留空则等于 user
+  sender: ""             # 邮件发件人地址（From），一般与 user 相同；留空则等于 user
 ```
 
 **留白会怎样**：`host` / `user` / `password` 任一为空 → 走**开发者模式**：不发邮件，验证码随接口返回并显示在前端弹窗，同时打印在服务端日志（`[ChronosFit][dev] code for ...`）。本地开发和自测就用这个模式。
@@ -194,10 +198,11 @@ docker compose up -d --build
 | 内容 | 位置 | 挂载方式 |
 | --- | --- | --- |
 | SQLite 数据库 | `./data/workout.db` | bind mount `./data:/app/data` |
-| 容器内配置 | `./data/config.yaml` | 同上（首次启动自动从模板写入） |
+| 配置文件 | `./data/config.yaml` | 同上（首次启动自动从镜像内模板写入） |
+| 配置模板 | `./data/config.example.yaml` | 同上（进版本库，clone 即自带） |
 | MySQL 数据 | 命名卷 `mysql-data` | `docker compose down` 不会删，`down -v` 才会 |
 
-容器第一次启动时，入口脚本会把 `config.example.yaml` 复制成 `/app/data/config.yaml`（已存在则绝不覆盖），因此在宿主机上直接编辑 `data/config.yaml` 就能改配置，重建镜像也不丢。
+容器第一次启动时，入口脚本会把镜像内的 `config.example.yaml` 复制成 `/app/data/config.yaml`（已存在则绝不覆盖），因此在宿主机上直接编辑 `data/config.yaml` 就能改配置，重建镜像也不丢。
 
 #### 4.1 连容器外的 MySQL
 
@@ -233,7 +238,7 @@ environment:
 
 #### 4.4 邮箱配置（本地文件映射）
 
-SMTP 配置和数据库一样走 `data/config.yaml` —— 它随 `./data:/app/data` 一起映射在宿主机上，直接编辑 `data/config.yaml` 的 `smtp:` 段再 `docker compose restart` 即可，不必进容器、不必重建镜像：
+SMTP 配置和数据库一样走 `data/config.yaml`（模板见 `data/config.example.yaml`）—— 它随 `./data:/app/data` 一起映射在宿主机上，直接编辑 `data/config.yaml` 的 `smtp:` 段再 `docker compose restart` 即可，不必进容器、不必重建镜像：
 
 ```yaml
 smtp:
