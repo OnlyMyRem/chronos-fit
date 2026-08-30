@@ -25,12 +25,14 @@ _session_factory: sessionmaker[Session] | None = None
 
 
 def normalize_sqlite_url(url: str) -> str:
-    """Resolve relative SQLite paths against the data directory's parent.
+    """Resolve relative SQLite paths so the database always lives in the data dir.
 
-    With the default data dir (./data under the working directory) this is the
-    launch directory itself; with CHRONOSFIT_DATA_DIR overridden the default
-    database URL still lands inside it. Anchoring to a module-relative path
-    instead would point into site-packages for an installed wheel.
+    The conventional layout is <root>/data, where anchoring to DATA_DIR.parent
+    keeps existing config.yaml files (``sqlite:///./data/workout.db``) working.
+    With a custom CHRONOSFIT_DATA_DIR / --data-dir, anchor to the data dir
+    itself so the default database URL still lands inside it. Anchoring to a
+    module-relative path instead would point into site-packages for an
+    installed wheel.
     """
     if not url.startswith("sqlite"):
         return url
@@ -44,7 +46,8 @@ def normalize_sqlite_url(url: str) -> str:
     path = Path(raw.replace("\\", "/"))
     if path.is_absolute():
         return url
-    resolved = (DATA_DIR.parent / path).resolve()
+    anchor = DATA_DIR.parent if DATA_DIR.name == "data" else DATA_DIR
+    resolved = (anchor / path).resolve()
     return f"{_SQLITE_PREFIX}{resolved.as_posix()}"
 
 

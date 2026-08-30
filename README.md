@@ -51,7 +51,7 @@ pip install -e .
 chronos-fit                   # 或 python -m chronos_fit
 ```
 
-打开 <http://localhost:18000>。首次启动自动建表并写入默认计划与词条，数据库默认落在 `data/workout.db`。监听地址和端口可用 `--addr` / `--port` 覆盖（如 `chronos-fit --addr 127.0.0.1 --port 8080`），不传则用配置里的值。
+打开 <http://localhost:18000>。首次启动自动建表并写入默认计划与词条，数据库默认落在 `data/workout.db`。监听地址和端口可用 `--addr` / `--port` 覆盖（如 `chronos-fit --addr 127.0.0.1 --port 8080`），数据目录可用 `--data-dir` 指定（如 `chronos-fit --data-dir /home/user/chronos-fit/data`），不传则用配置里的值 / 当前目录下的 `data/`。
 
 ### 打包成 wheel 安装运行
 
@@ -60,7 +60,7 @@ chronos-fit                   # 或 python -m chronos_fit
 pip install dist/chronos_fit-*.whl
 ```
 
-装好后在**目标目录**直接运行 `chronos-fit` 即可：前端资源随包安装，配置与数据库生成在工作目录的 `data/` 下，无需源码。想固定数据位置就设环境变量 `CHRONOSFIT_DATA_DIR=/path/to/data`（配置查找、相对路径的 SQLite 文件都跟着它走）。
+装好后任意目录运行 `chronos-fit` 即可：前端资源随包安装，配置与数据库默认生成在工作目录的 `data/` 下，无需源码。要沿用旧目录里的数据就加 `--data-dir /path/to/old/data`（或设环境变量 `CHRONOSFIT_DATA_DIR`），配置查找、相对路径的 SQLite 文件都跟着它走。
 
 ### 发布到 PyPI
 
@@ -85,13 +85,31 @@ mkdir -p /opt/chronos-fit && cd /opt/chronos-fit
 python -m venv .venv
 .venv/bin/pip install chronos-fit
 
-# 方式二：拉源码安装（想改代码或用未发布版本时）
+# 方式二：拉源码可编辑安装（想改代码或用未发布版本时，改完代码重启即生效）
 git clone <repo-url> /opt/chronos-fit && cd /opt/chronos-fit
 python -m venv .venv
-.venv/bin/pip install .
+.venv/bin/pip install -e .
 ```
 
-`/etc/systemd/system/chronosfit.service`：
+两种装法都把下面的单元写到 `/etc/systemd/system/chronosfit.service`，按装法选一份：
+
+**方式一（whl 安装）**：部署目录无源码，数据默认生成在 `/opt/chronos-fit/data/`；沿用旧数据目录就加 `--data-dir`（不需要可去掉），改端口同理加 `--addr` / `--port`。
+
+```ini
+[Unit]
+Description=ChronosFit dashboard
+After=network.target
+
+[Service]
+WorkingDirectory=/opt/chronos-fit
+ExecStart=/opt/chronos-fit/.venv/bin/chronos-fit --data-dir /home/admin/chronos-fit/data
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+**方式二（源码安装）**：`git pull` 更新代码后重启服务即可，数据默认落在仓库的 `data/` 下。
 
 ```ini
 [Unit]
@@ -107,14 +125,25 @@ Restart=always
 WantedBy=multi-user.target
 ```
 
-数据默认落在 `/opt/chronos-fit/data/`；如需指定端口或数据位置，在 `[Service]` 里加 `ExecStart=... --addr 127.0.0.1 --port 8080` 或 `Environment="CHRONOSFIT_DATA_DIR=/path/to/data"`。
-
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl enable --now chronosfit
 ```
 
 前面挂 Nginx 反向代理即可对外提供 HTTPS。
+
+**更新**：数据库表结构在启动时自动升级（见「从旧版本升级」），只需更新程序本体后重启：
+
+```bash
+# 方式一（whl 安装）：pip 升级，锁版本可写 chronos-fit==x.y.z
+cd /opt/chronos-fit && .venv/bin/pip install -U chronos-fit
+
+# 方式二（源码安装）：拉新代码；若 pyproject.toml 依赖有变化，重跑一次可编辑安装
+cd /opt/chronos-fit && git pull
+# .venv/bin/pip install -e .
+
+sudo systemctl restart chronosfit
+```
 
 ### Docker
 
