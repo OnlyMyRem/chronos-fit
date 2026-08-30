@@ -44,18 +44,44 @@ cp data/config.example.yaml data/config.yaml
 
 - **邮箱（验证码）**：填 `smtp:` 的 `host / port / user / password`，QQ 邮箱用 SMTP 授权码而非登录密码。任一留空则走**开发者模式**：验证码直接显示在页面弹窗和服务端日志，不真实发信，适合本地自测。生产建议用 `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` / `SMTP_FROM` 环境变量注入。
 
-### 本地运行
+### 本地运行（源码）
 
 ```bash
-pip install -r requirements.txt
-python -m backend.main
+pip install -e .
+chronosfit                    # 或 python -m chronos_fit
 ```
 
 打开 <http://localhost:18000>。首次启动自动建表并写入默认计划与词条，数据库默认落在 `data/workout.db`。
 
+### 打包成 wheel 安装运行
+
+```bash
+./build_wheel.sh              # 产物：dist/chronos_fit-<版本>-py3-none-any.whl
+pip install dist/chronos_fit-*.whl
+```
+
+装好后在**目标目录**直接运行 `chronosfit` 即可：前端资源随包安装，配置与数据库生成在工作目录的 `data/` 下，无需源码。想固定数据位置就设环境变量 `CHRONOSFIT_DATA_DIR=/path/to/data`（配置查找、相对路径的 SQLite 文件都跟着它走）。
+
+### 发布到 PyPI
+
+PyPI 项目名为 **chronos-fit**（导入名 `chronos_fit`，命令 `chronosfit`）。在 pypi.org 注册账号并创建 API token 后：
+
+```bash
+pip install twine
+twine upload dist/*           # 提示 Username 填 __token__，Password 填 token
+```
+
+发布成功后任意机器 `pip install chronos-fit` 即可。建议先发 TestPyPI 试装一次（`twine upload --repository testpypi dist/*`），确认无误再发正式源。
+
 ## 部署
 
 ### systemd（裸机）
+
+```bash
+cd /opt/chronos-fit
+python -m venv .venv
+.venv/bin/pip install .       # 或 .venv/bin/pip install chronosfit-*.whl
+```
 
 `/etc/systemd/system/chronosfit.service`：
 
@@ -67,7 +93,7 @@ After=network.target
 [Service]
 WorkingDirectory=/opt/chronos-fit
 Environment="CHRONOSFIT_API_KEY=your-secret-key"
-ExecStart=/opt/chronos-fit/.venv/bin/python -m backend.main
+ExecStart=/opt/chronos-fit/.venv/bin/chronosfit
 Restart=always
 
 [Install]
@@ -87,7 +113,7 @@ sudo systemctl enable --now chronosfit
 docker compose up -d --build
 ```
 
-配置与 SQLite 都在 `./data`（bind mount `./data:/app/data`），不随容器重建丢失；容器首次启动自动从模板生成配置。MySQL 两种接法：
+镜像内 `pip install chronos-fit` 从 PyPI 取包，取不到时自动回退到构建上下文里的 `dist/*.whl`——离线或尚未发布时先 `./build_wheel.sh` 再构建即可，也可用 `--build-arg CHRONOSFIT_VERSION=x.y.z` 锁版本。配置与 SQLite 都在 `./data`（bind mount `./data:/app/data`），不随容器重建丢失；容器首次启动自动从模板生成配置。MySQL 两种接法：
 
 - **外部 MySQL**：`.env` 里设 `DATABASE_URL=mysql+pymysql://user:密码@host.docker.internal:3306/chronosfit?charset=utf8mb4`（`host.docker.internal` 指向宿主机，远程机器换成内网 IP）。
 - **compose 自带**：`docker compose --profile mysql up -d --build`，并用 `.env` 设好 `DATABASE_URL`。
@@ -97,8 +123,8 @@ docker compose up -d --build
 无需任何手工操作，直接启动新版本即可：
 
 - **数据库自动接管**：目标库文件不存在而项目根有旧版 `workout.db` 时，启动时自动复制到 `data/workout.db`；旧文件保留为备份，确认数据无误后可自行删除。
-- **表结构自动升级**：建缺失的表、补缺失的列（如 `users.theme`、`users.is_admin`）、修正索引格式，均在每次启动时自动完成（`backend/bootstrap.py`），SQLite 与 MySQL 通用；带星期前缀的旧默认计划会自动改名，打卡记录一并跟上。
-- 启动命令由 `uvicorn main:app` 改为 `python -m backend.main`（或 `uvicorn backend.main:app`）。
+- **表结构自动升级**：建缺失的表、补缺失的列（如 `users.theme`、`users.is_admin`）、修正索引格式，均在每次启动时自动完成（`chronos_fit/bootstrap.py`），SQLite 与 MySQL 通用；带星期前缀的旧默认计划会自动改名，打卡记录一并跟上。
+- 启动命令由 `uvicorn main:app` 改为 `chronosfit`（或 `python -m chronos_fit`）；包名由 `backend` 改为 `chronos_fit`，uvicorn 用户相应改为 `uvicorn chronos_fit.main:app`。
 - 配置文件统一为 `data/config.yaml`；旧的项目根 `config.yaml` 仍会被读取，兼容老部署。
 
 ## 备份
@@ -119,13 +145,13 @@ docker compose exec mysql sh -c 'mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" chron
 
 ```
 chronos-fit/
-├── backend/              # FastAPI 后端：路由、模型、启动时自动迁移表结构与播种默认数据
-├── frontend/             # 零构建前端（index.html / style.css / app.js），由后端挂载到 /static
+├── chronos_fit/          # Python 包：FastAPI 后端 + 前端静态资源，随 wheel 一起安装
 ├── data/                 # 运行时目录：config.yaml、SQLite 数据库、配置模板
-├── Dockerfile            # 镜像构建（Python 3.12 slim）
+├── pyproject.toml        # 打包配置：依赖、版本号、chronosfit 命令
+├── build_wheel.sh        # 一键构建 wheel 到 dist/
+├── Dockerfile            # 镜像构建（Python 3.12 slim，pip install .）
 ├── docker-compose.yml    # 编排：应用 + 可选 MySQL（profile）
 ├── docker-entrypoint.sh  # 容器入口：首次启动写出配置模板
 ├── .env.example          # Docker 环境变量模板
-├── requirements.txt      # Python 依赖清单
 └── README.md             # 本文档
 ```

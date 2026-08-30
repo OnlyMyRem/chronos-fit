@@ -1,4 +1,4 @@
-"""Entry point — ``python -m backend.main`` or ``uvicorn backend.main:app``."""
+"""Entry point — ``chronosfit``, ``python -m chronos_fit`` or ``uvicorn chronos_fit.main:app``."""
 
 from __future__ import annotations
 

@@ -14,7 +14,7 @@ from typing import Any
 from sqlalchemy import Engine, create_engine, inspect, select
 from sqlalchemy.orm import Session, sessionmaker
 
-from .config import ROOT_DIR, Config
+from .config import DATA_DIR, Config
 from .models import Base
 
 _SQLITE_ABS = "sqlite:////"
@@ -25,10 +25,12 @@ _session_factory: sessionmaker[Session] | None = None
 
 
 def normalize_sqlite_url(url: str) -> str:
-    """Resolve relative SQLite paths against the project root, never the cwd.
+    """Resolve relative SQLite paths against the data directory's parent.
 
-    Without this, launching from another directory silently creates a second, empty
-    database and the user appears to lose their data.
+    With the default data dir (./data under the working directory) this is the
+    launch directory itself; with CHRONOSFIT_DATA_DIR overridden the default
+    database URL still lands inside it. Anchoring to a module-relative path
+    instead would point into site-packages for an installed wheel.
     """
     if not url.startswith("sqlite"):
         return url
@@ -42,7 +44,7 @@ def normalize_sqlite_url(url: str) -> str:
     path = Path(raw.replace("\\", "/"))
     if path.is_absolute():
         return url
-    resolved = (ROOT_DIR / path).resolve()
+    resolved = (DATA_DIR.parent / path).resolve()
     return f"{_SQLITE_PREFIX}{resolved.as_posix()}"
 
 

@@ -5,7 +5,8 @@
 # config.yaml 已被 .gitignore 忽略，密码不会进版本库。
 #
 # 说明：
-#   - 本地直接运行（python -m backend.main）与 Docker 部署读的都是 data/config.yaml，
+#   - 本地直接运行（chronosfit 或 python -m chronos_fit）与 Docker 部署读的都是
+#     data/config.yaml（data 目录位于工作目录，可用 CHRONOSFIT_DATA_DIR 覆盖），
 #     配置文件与 SQLite 数据库、本模板放在同一个目录，不易改错位置。
 #   - 本文件不存在时程序照常启动，全部使用下面的默认值（SQLite + 开发者模式邮箱）。
 #   - 每一项都可以用注释里标注的环境变量覆盖，方便 Docker / K8s 注入密钥而无需改文件。

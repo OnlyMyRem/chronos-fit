@@ -7,12 +7,16 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# Dependencies first so edits to code don't break the layer cache.
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+# Install the released wheel: prefer PyPI, fall back to the locally built
+# wheel in dist/ (run ./build_wheel.sh first when PyPI is unreachable or the
+# release does not exist yet). Pin with --build-arg CHRONOSFIT_VERSION=x.y.z.
+ARG CHRONOSFIT_VERSION=
+COPY dist/*.whl /tmp/wheels/
+RUN pkg=chronos-fit; \
+    [ -z "$CHRONOSFIT_VERSION" ] || pkg="chronos-fit==$CHRONOSFIT_VERSION"; \
+    pip install --no-cache-dir "$pkg" || pip install --no-cache-dir /tmp/wheels/*.whl; \
+    rm -rf /tmp/wheels
 
-COPY backend ./backend
-COPY frontend ./frontend
 COPY data/config.example.yaml docker-entrypoint.sh ./
 
 RUN useradd --create-home --shell /bin/sh appuser \
@@ -31,4 +35,4 @@ EXPOSE 18000
 ENV CHRONOSFIT_CONFIG=/app/data/config.yaml
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
-CMD ["python", "-m", "backend.main"]
+CMD ["chronosfit"]

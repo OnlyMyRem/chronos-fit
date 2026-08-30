@@ -1,7 +1,7 @@
 """Configuration: config.yaml plus environment-variable overrides.
 
 Missing config.yaml is not an error — the defaults below keep
-`uvicorn backend.main:app` working with zero setup.
+`python -m chronos_fit` working with zero setup.
 """
 
 from __future__ import annotations
@@ -12,9 +12,21 @@ from pathlib import Path
 
 import yaml
 
-ROOT_DIR = Path(__file__).resolve().parents[1]
-DATA_DIR = ROOT_DIR / "data"
-FRONTEND_DIR = ROOT_DIR / "frontend"
+PACKAGE_DIR = Path(__file__).resolve().parent
+# Frontend ships inside the package so an installed wheel finds it too.
+FRONTEND_DIR = PACKAGE_DIR / "frontend"
+
+
+def _data_dir() -> Path:
+    """Stateful files (config.yaml, SQLite db) live next to where the app is
+    launched, never inside site-packages — that keeps a pip-installed wheel
+    writable and backups easy. CHRONOSFIT_DATA_DIR overrides the location."""
+    raw = os.environ.get("CHRONOSFIT_DATA_DIR", "").strip()
+    path = Path(raw) if raw else Path.cwd() / "data"
+    return path if path.is_absolute() else (Path.cwd() / path).resolve()
+
+
+DATA_DIR = _data_dir()
 
 DEFAULT_DB_URL = "sqlite:///./data/workout.db"
 
@@ -133,21 +145,22 @@ def _read_yaml(path: Path) -> dict:
 
 
 def _resolve_path(path: Path) -> Path:
-    return path if path.is_absolute() else ROOT_DIR / path
+    return path if path.is_absolute() else (Path.cwd() / path).resolve()
 
 
 def config_path(explicit: str | os.PathLike[str] | None = None) -> Path | None:
     """Explicit argument > CHRONOSFIT_CONFIG > ./data/config.yaml > ./config.yaml (legacy).
 
     Both the local run and the Docker image read data/config.yaml by default —
-    the config, the SQLite file and the template live side by side. The project
-    root config.yaml stays as a compatibility fallback for older deployments.
+    the config, the SQLite file and the template live side by side. A
+    config.yaml beside the data directory stays as a compatibility fallback
+    for older deployments.
     """
     for candidate in (
         explicit,
         os.environ.get("CHRONOSFIT_CONFIG"),
         DATA_DIR / "config.yaml",
-        ROOT_DIR / "config.yaml",
+        DATA_DIR.parent / "config.yaml",
     ):
         if not candidate:
             continue

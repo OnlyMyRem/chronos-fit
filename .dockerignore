@@ -18,3 +18,7 @@ Dockerfile
 docker-compose.yml
 README.md
 tests/
+
+# wheel build artifacts (keep dist/ — the Dockerfile falls back to the local wheel)
+build/
+*.egg-info/

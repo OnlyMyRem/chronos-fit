@@ -16,6 +16,12 @@ data/*
 # tool scratch
 .omo/
 .pytest_cache/
+.playwright-cli/
 
 # compose 本机密钥注入（从 .env.example 复制）
 .env
+
+# wheel build artifacts
+dist/
+build/
+*.egg-info/

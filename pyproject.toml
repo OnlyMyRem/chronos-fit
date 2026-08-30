@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chronos-fit"
+dynamic = ["version"]
+description = "Self-hosted Beijing-time dashboard: fullscreen clock, workout check-in, meals, body stats, countdown timers."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "Fan Zehao", email = "fzh70kg@163.com" }]
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "sqlalchemy>=2.0.44",
+    "pymysql>=1.1.1",
+    "pyyaml>=6.0",
+    "openpyxl>=3.1",
+    "python-multipart>=0.0.9",
+]
+
+[project.scripts]
+chronosfit = "chronos_fit.main:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "chronos_fit.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["chronos_fit*"]
+
+[tool.setuptools.package-data]
+chronos_fit = ["frontend/*"]

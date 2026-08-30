@@ -9,12 +9,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from . import __version__ as VERSION
 from . import db
 from .api import admin, auth, body, imports, meals, metronomes, plans, reports, ticker, workouts
 from .bootstrap import bootstrap
 from .config import FRONTEND_DIR, Config, load_config
-
-VERSION = "3.0.0"
 
 
 @asynccontextmanager

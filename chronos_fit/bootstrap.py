@@ -12,12 +12,12 @@ from sqlalchemy import Engine, text, update
 from sqlalchemy.orm import Session
 
 from . import db
-from .config import ROOT_DIR, Config
+from .config import DATA_DIR, Config
 from .models import Base, User
 from .seeds import seed_defaults
 
 EMAIL_INDEX = "idx_users_email"
-LEGACY_DB = ROOT_DIR / "workout.db"
+LEGACY_DB = DATA_DIR.parent / "workout.db"
 
 
 def _literal(value: object) -> str:
