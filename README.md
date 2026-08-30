@@ -91,7 +91,7 @@ python -m venv .venv
 .venv/bin/pip install -e .
 ```
 
-两种装法都把下面的单元写到 `/etc/systemd/system/chronosfit.service`，按装法选一份：
+两种装法都把下面的单元写到 `/etc/systemd/system/fit.service`，按装法选一份：
 
 **方式一（whl 安装）**：部署目录无源码，数据默认生成在 `/opt/chronos-fit/data/`；沿用旧数据目录就加 `--data-dir`（不需要可去掉），改端口同理加 `--addr` / `--port`。
 
@@ -136,13 +136,13 @@ sudo systemctl enable --now chronosfit
 
 ```bash
 # 方式一（whl 安装）：pip 升级，锁版本可写 chronos-fit==x.y.z
-cd /opt/chronos-fit && .venv/bin/pip install -U chronos-fit
+cd /opt/chronos-fit && sudo .venv/bin/pip install -U chronos-fit -i https://pypi.org/simple/
 
 # 方式二（源码安装）：拉新代码；若 pyproject.toml 依赖有变化，重跑一次可编辑安装
 cd /opt/chronos-fit && git pull
 # .venv/bin/pip install -e .
 
-sudo systemctl restart chronosfit
+sudo systemctl restart fit
 ```
 
 ### Docker
