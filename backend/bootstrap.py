@@ -6,15 +6,18 @@ side effect (the old module ran ``init_db()`` at import time).
 
 from __future__ import annotations
 
+import shutil
+
 from sqlalchemy import Engine, text, update
 from sqlalchemy.orm import Session
 
 from . import db
-from .config import Config
+from .config import ROOT_DIR, Config
 from .models import Base, User
 from .seeds import seed_defaults
 
 EMAIL_INDEX = "idx_users_email"
+LEGACY_DB = ROOT_DIR / "workout.db"
 
 
 def _literal(value: object) -> str:
@@ -112,7 +115,31 @@ def _sync_admins(session: Session, cfg: Config) -> None:
     )
 
 
+def _adopt_legacy_database(cfg: Config) -> None:
+    """Upgrade path from pre-3.0 versions: their database lived at the project
+    root (./workout.db). If the configured SQLite file does not exist yet, copy
+    the legacy file into place; the schema upgrades below bring it current. The
+    original is kept untouched as a backup. Users upgrading never have to move
+    any file themselves."""
+    if cfg.database.dialect != "sqlite":
+        return
+    target = db.sqlite_file(db.normalize_sqlite_url(cfg.database.url))
+    if target is None or target.exists():
+        return
+    if not LEGACY_DB.is_file() or LEGACY_DB.resolve() == target.resolve():
+        return
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(LEGACY_DB, target)
+    print(
+        f"[ChronosFit] found legacy database {LEGACY_DB}, copied it to {target} "
+        "and will upgrade the schema automatically. "
+        "The legacy file is kept as a backup; delete it once you have verified your data.",
+        flush=True,
+    )
+
+
 def bootstrap(cfg: Config) -> Engine:
+    _adopt_legacy_database(cfg)
     engine = db.configure(cfg)
     Base.metadata.create_all(engine, checkfirst=True)
     with db.session_scope() as session:
