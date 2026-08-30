@@ -21,7 +21,7 @@ dependencies = [
 ]
 
 [project.scripts]
-chronosfit = "chronos_fit.main:main"
+chronos-fit = "chronos_fit.main:main"
 
 [tool.setuptools.dynamic]
 version = { attr = "chronos_fit.__version__" }

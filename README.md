@@ -48,10 +48,10 @@ cp data/config.example.yaml data/config.yaml
 
 ```bash
 pip install -e .
-chronosfit                    # 或 python -m chronos_fit
+chronos-fit                   # 或 python -m chronos_fit
 ```
 
-打开 <http://localhost:18000>。首次启动自动建表并写入默认计划与词条，数据库默认落在 `data/workout.db`。
+打开 <http://localhost:18000>。首次启动自动建表并写入默认计划与词条，数据库默认落在 `data/workout.db`。监听地址和端口可用 `--addr` / `--port` 覆盖（如 `chronos-fit --addr 127.0.0.1 --port 8080`），不传则用配置里的值。
 
 ### 打包成 wheel 安装运行
 
@@ -60,11 +60,11 @@ chronosfit                    # 或 python -m chronos_fit
 pip install dist/chronos_fit-*.whl
 ```
 
-装好后在**目标目录**直接运行 `chronosfit` 即可：前端资源随包安装，配置与数据库生成在工作目录的 `data/` 下，无需源码。想固定数据位置就设环境变量 `CHRONOSFIT_DATA_DIR=/path/to/data`（配置查找、相对路径的 SQLite 文件都跟着它走）。
+装好后在**目标目录**直接运行 `chronos-fit` 即可：前端资源随包安装，配置与数据库生成在工作目录的 `data/` 下，无需源码。想固定数据位置就设环境变量 `CHRONOSFIT_DATA_DIR=/path/to/data`（配置查找、相对路径的 SQLite 文件都跟着它走）。
 
 ### 发布到 PyPI
 
-PyPI 项目名为 **chronos-fit**（导入名 `chronos_fit`，命令 `chronosfit`）。在 pypi.org 注册账号并创建 API token 后：
+PyPI 项目名为 **chronos-fit**（导入名 `chronos_fit`，命令 `chronos-fit`）。在 pypi.org 注册账号并创建 API token 后：
 
 ```bash
 pip install twine
@@ -77,10 +77,18 @@ twine upload dist/*           # 提示 Username 填 __token__，Password 填 tok
 
 ### systemd（裸机）
 
+两种装法，装好后都提供 `chronos-fit` 命令：
+
 ```bash
-cd /opt/chronos-fit
+# 方式一：直接从 PyPI 安装，不需要源码（推荐）
+mkdir -p /opt/chronos-fit && cd /opt/chronos-fit
 python -m venv .venv
-.venv/bin/pip install .       # 或 .venv/bin/pip install chronosfit-*.whl
+.venv/bin/pip install chronos-fit
+
+# 方式二：拉源码安装（想改代码或用未发布版本时）
+git clone <repo-url> /opt/chronos-fit && cd /opt/chronos-fit
+python -m venv .venv
+.venv/bin/pip install .
 ```
 
 `/etc/systemd/system/chronosfit.service`：
@@ -92,13 +100,14 @@ After=network.target
 
 [Service]
 WorkingDirectory=/opt/chronos-fit
-Environment="CHRONOSFIT_API_KEY=your-secret-key"
-ExecStart=/opt/chronos-fit/.venv/bin/chronosfit
+ExecStart=/opt/chronos-fit/.venv/bin/chronos-fit
 Restart=always
 
 [Install]
 WantedBy=multi-user.target
 ```
+
+数据默认落在 `/opt/chronos-fit/data/`；如需指定端口或数据位置，在 `[Service]` 里加 `ExecStart=... --addr 127.0.0.1 --port 8080` 或 `Environment="CHRONOSFIT_DATA_DIR=/path/to/data"`。
 
 ```bash
 sudo systemctl daemon-reload
@@ -124,7 +133,7 @@ docker compose up -d --build
 
 - **数据库自动接管**：目标库文件不存在而项目根有旧版 `workout.db` 时，启动时自动复制到 `data/workout.db`；旧文件保留为备份，确认数据无误后可自行删除。
 - **表结构自动升级**：建缺失的表、补缺失的列（如 `users.theme`、`users.is_admin`）、修正索引格式，均在每次启动时自动完成（`chronos_fit/bootstrap.py`），SQLite 与 MySQL 通用；带星期前缀的旧默认计划会自动改名，打卡记录一并跟上。
-- 启动命令由 `uvicorn main:app` 改为 `chronosfit`（或 `python -m chronos_fit`）；包名由 `backend` 改为 `chronos_fit`，uvicorn 用户相应改为 `uvicorn chronos_fit.main:app`。
+- 启动命令由 `uvicorn main:app` 改为 `chronos-fit`（或 `python -m chronos_fit`）；包名由 `backend` 改为 `chronos_fit`，uvicorn 用户相应改为 `uvicorn chronos_fit.main:app`。
 - 配置文件统一为 `data/config.yaml`；旧的项目根 `config.yaml` 仍会被读取，兼容老部署。
 
 ## 备份
@@ -147,9 +156,9 @@ docker compose exec mysql sh -c 'mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" chron
 chronos-fit/
 ├── chronos_fit/          # Python 包：FastAPI 后端 + 前端静态资源，随 wheel 一起安装
 ├── data/                 # 运行时目录：config.yaml、SQLite 数据库、配置模板
-├── pyproject.toml        # 打包配置：依赖、版本号、chronosfit 命令
+├── pyproject.toml        # 打包配置：依赖、版本号、chronos-fit 命令
 ├── build_wheel.sh        # 一键构建 wheel 到 dist/
-├── Dockerfile            # 镜像构建（Python 3.12 slim，pip install .）
+├── Dockerfile            # 镜像构建（Python 3.12 slim，PyPI 装包、本地 wheel 兜底）
 ├── docker-compose.yml    # 编排：应用 + 可选 MySQL（profile）
 ├── docker-entrypoint.sh  # 容器入口：首次启动写出配置模板
 ├── .env.example          # Docker 环境变量模板

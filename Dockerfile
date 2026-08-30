@@ -35,4 +35,4 @@ EXPOSE 18000
 ENV CHRONOSFIT_CONFIG=/app/data/config.yaml
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
-CMD ["chronosfit"]
+CMD ["chronos-fit"]
