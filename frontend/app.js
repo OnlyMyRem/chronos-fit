@@ -28,6 +28,7 @@
       fullscreenHint: '已进入全屏 · 按 <kbd>Esc</kbd> 或 <kbd>F11</kbd> 退出全屏',
       calendarBtn: "📅 日历", mealsBtn: "🍽 三餐",
       calendarTitle: "日历", mealsTitle: "三餐与身体数据",
+      railGripTip: "拖动可交换左右位置",
       pagePrev: "第 1 页 · 今日锻炼、三餐、体重体脂",
       pageNext: "第 2 页 · 身体曲线与历史记录",
       pageDotPlan: "第 1 页 · 今日",
@@ -183,6 +184,7 @@
       fullscreenHint: 'Fullscreen · press <kbd>Esc</kbd> or <kbd>F11</kbd> to exit',
       calendarBtn: "📅 Calendar", mealsBtn: "🍽 Meals",
       calendarTitle: "Calendar", mealsTitle: "Meals & Body Stats",
+      railGripTip: "Drag to swap sides",
       plan: "Plan", editPlan: "✏ Edit plan",
       futureNotice: "Selected date is in the future — logging is disabled",
       backToToday: "Back to today",
@@ -3269,6 +3271,158 @@
     });
   }
 
+  // ---------- Draggable side rails ----------
+  /* 日历（左）与倒计时（右）两个侧栏可拖动：
+     - 拖住面板头部（标题旁的 ⠿ 区域）自由移动，松手后固定在落点并保存；
+     - 落到对侧面板上则交换左右位置；
+     两种偏好都存 localStorage。 */
+  function setupRailDrag() {
+    const narrowMQ = window.matchMedia("(max-width: 1320px)");
+    const calRail = $("calendar-rail");
+    const metroRail = $("metro-rail");
+
+    if (localStorage.getItem("chronosfit_rails") === "swapped") {
+      document.body.classList.add("rails-swapped");
+    }
+    // 恢复上次自由摆放的位置（行内样式优先于 CSS 位置，与交换状态不冲突）。
+    try {
+      const pos = JSON.parse(localStorage.getItem("chronosfit_rail_pos") || "{}");
+      for (const id of [calRail.id, metroRail.id]) {
+        const p = pos[id];
+        const rail = $(id);
+        if (rail && p && Number.isFinite(p.left) && Number.isFinite(p.top)) {
+          const x = Math.max(8, Math.min(p.left, window.innerWidth - rail.offsetWidth - 8));
+          const y = Math.max(8, Math.min(p.top, window.innerHeight - rail.offsetHeight - 8));
+          rail.style.transform = "none";
+          rail.style.left = x + "px";
+          rail.style.top = y + "px";
+        }
+      }
+    } catch {}
+
+    function clearInline(r) {
+      r.style.left = "";
+      r.style.top = "";
+      r.style.transform = "";
+    }
+
+    function swapRails() {
+      const swapped = document.body.classList.toggle("rails-swapped");
+      localStorage.setItem("chronosfit_rails", swapped ? "swapped" : "normal");
+      localStorage.removeItem("chronosfit_rail_pos"); // 交换后回到标准布局，清掉自由位置
+      clearInline(calRail);
+      clearInline(metroRail);
+      document.body.classList.add("rails-swap-anim");
+      setTimeout(() => document.body.classList.remove("rails-swap-anim"), 320);
+    }
+
+    function savePositions() {
+      let pos = {};
+      try {
+        pos = JSON.parse(localStorage.getItem("chronosfit_rail_pos") || "{}");
+      } catch {}
+      [calRail, metroRail].forEach((r) => {
+        if (r.style.left || r.style.top) {
+          const rect = r.getBoundingClientRect();
+          pos[r.id] = { left: Math.round(rect.left), top: Math.round(rect.top) };
+        } else {
+          delete pos[r.id];
+        }
+      });
+      localStorage.setItem("chronosfit_rail_pos", JSON.stringify(pos));
+    }
+
+    [calRail, metroRail].forEach((rail) => {
+      const head = rail.querySelector(".rail-head");
+      const other = rail === calRail ? metroRail : calRail;
+      let dragging = false;
+      let moved = false;
+      let dx = 0;
+      let dy = 0;
+      let startX = 0;
+      let startY = 0;
+
+      function dropHit(e) {
+        const r = other.getBoundingClientRect();
+        return (
+          e.clientX >= r.left - 24 &&
+          e.clientX <= r.right + 24 &&
+          e.clientY >= r.top - 24 &&
+          e.clientY <= r.bottom + 24
+        );
+      }
+
+      function onDown(e) {
+        // 窄屏是静态堆叠布局，拖动没有意义；点击按钮也不触发拖动。
+        if (narrowMQ.matches) return;
+        if (e.pointerType === "mouse" && e.button !== 0) return;
+        if (e.target.closest("button, input, select, a")) return;
+        e.preventDefault();
+        const rect = rail.getBoundingClientRect();
+        dragging = true;
+        moved = false;
+        dx = e.clientX - rect.left;
+        dy = e.clientY - rect.top;
+        startX = e.clientX;
+        startY = e.clientY;
+        rail.classList.add("rail-dragged");
+        rail.style.left = rect.left + "px";
+        rail.style.top = rect.top + "px";
+        document.body.classList.add("rail-dragging");
+        document.body.style.userSelect = "none";
+        head.setPointerCapture(e.pointerId);
+      }
+
+      function onMove(e) {
+        if (!dragging) return;
+        if (!moved && Math.hypot(e.clientX - startX, e.clientY - startY) > 8) {
+          moved = true;
+        }
+        if (!moved) return;
+        const x = Math.max(8, Math.min(e.clientX - dx, window.innerWidth - rail.offsetWidth - 8));
+        const y = Math.max(8, Math.min(e.clientY - dy, window.innerHeight - rail.offsetHeight - 8));
+        rail.style.left = x + "px";
+        rail.style.top = y + "px";
+        other.classList.toggle("rail-drop-target", dropHit(e));
+      }
+
+      function onUp(e) {
+        if (!dragging) return;
+        const hit = moved && dropHit(e);
+        other.classList.remove("rail-drop-target");
+        if (hit) {
+          reset();
+          swapRails();
+        } else if (moved) {
+          // 未落到对侧：固定在移动后的位置，并记住它（刷新不丢）。
+          dragging = false;
+          moved = false;
+          rail.classList.remove("rail-dragged");
+          rail.style.transform = "none";
+          document.body.classList.remove("rail-dragging");
+          document.body.style.userSelect = "";
+          savePositions();
+        } else {
+          reset();
+        }
+      }
+
+      function reset() {
+        dragging = false;
+        moved = false;
+        rail.classList.remove("rail-dragged");
+        clearInline(rail);
+        document.body.classList.remove("rail-dragging");
+        document.body.style.userSelect = "";
+      }
+
+      head.addEventListener("pointerdown", onDown);
+      head.addEventListener("pointermove", onMove);
+      head.addEventListener("pointerup", onUp);
+      head.addEventListener("pointercancel", reset);
+    });
+  }
+
   // ---------- Init ----------
   /* 顺序刻意是「先绑定、后取数」：事件绑定不依赖任何服务端数据。
      以前是反的，只要 /api/plans 请求失败（服务刚重启、网络抖动都会），
@@ -3321,6 +3475,7 @@
     setupSettingsModal();
     setupAdminModal();
     setupPageNav();
+    setupRailDrag();
 
     $("cal-prev").addEventListener("click", calPrev);
     $("cal-next").addEventListener("click", calNext);

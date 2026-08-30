@@ -1507,6 +1507,79 @@ body.light .plan-title-select {
   align-items: center;
   justify-content: space-between;
   padding: 0 4px;
+  cursor: grab;
+}
+
+.rail-head:active {
+  cursor: grabbing;
+}
+
+.rail-head-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* 拖动把手：让用户一眼看出两个侧栏可以互相换边。 */
+.rail-grip {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1;
+  padding: 0;
+  cursor: grab;
+  touch-action: none;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.rail-grip:hover {
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+body.rail-dragging .rail-grip {
+  cursor: grabbing;
+}
+
+/* 交换后：日历去右侧、倒计时去左侧（仅固定布局生效，窄屏静态布局不受影响）。 */
+body.rails-swapped .calendar-rail {
+  left: auto;
+  right: 44px;
+}
+
+body.rails-swapped .metro-rail {
+  right: auto;
+  left: 44px;
+}
+
+/* 交换瞬间的平滑滑动（只在动画期间启用，避免每次刷新都滑一次）。 */
+body.rails-swap-anim .calendar-rail,
+body.rails-swap-anim .metro-rail {
+  transition: left 0.3s ease, right 0.3s ease, top 0.3s ease, transform 0.3s ease;
+}
+
+/* 拖动中：被拖面板跟随光标并浮起，目标面板高亮。 */
+body.rail-dragging .rail-dragged {
+  transition: none;
+  transform: none;
+  z-index: 60;
+  opacity: 0.95;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+
+.rail-drop-target {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px var(--accent-dim), 0 10px 40px rgba(0, 0, 0, 0.35) !important;
 }
 
 .rail-title {
