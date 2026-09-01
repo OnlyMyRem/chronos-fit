@@ -46,7 +46,11 @@ cp data/config.example.yaml data/config.yaml
 
 ### 本地运行（源码）
 
+需要 Python 3.10+，建议先建虚拟环境：
+
 ```bash
+python -m venv .venv
+source .venv/bin/activate     # Windows 用 .venv\Scripts\activate
 pip install -e .
 chronos-fit                   # 或 python -m chronos_fit
 ```

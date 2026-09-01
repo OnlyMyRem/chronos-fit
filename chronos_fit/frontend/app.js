@@ -1707,8 +1707,8 @@
   }
 
   function applyBodyPlaceholders() {
-    // 留空 = 不记这一项，是合法操作：没录过时直接提示「选填」，
-    // 录过则灰显上次数值作参考，但不再拿 70/20 之类的假默认值充数。
+    // 留空 = 不记这一项，是合法操作：没录过时提示「选填」；录过则把
+    // 上次数值放进 placeholder，用户清空预填值后仍能看到参考。
     [["body-weight", "weight"], ["body-fat", "body_fat"]].forEach(([id, key]) => {
       const el = $(id);
       if (!el) return;
@@ -1721,9 +1721,13 @@
     const rows = bodyFiltered();
     const entry = bodyHistory.find((r) => r.log_date === currentDate);
     applyBodyPlaceholders();
-    // Today's own values win; anything unset falls back to the grey placeholder.
-    $("body-weight").value = entry && bodyNum(entry.weight) !== null ? entry.weight : "";
-    $("body-fat").value = entry && bodyNum(entry.body_fat) !== null ? entry.body_fat : "";
+    // 当天已有记录用当天值；否则把上次数值直接预填为默认值：
+    // 点进输入框即等于输入了默认值，上下箭头也从它开始加减；
+    // 清空输入框仍然表示「不记这一项」。
+    $("body-weight").value = entry && bodyNum(entry.weight) !== null ? entry.weight
+      : (bodyCarryForward("weight") ?? "");
+    $("body-fat").value = entry && bodyNum(entry.body_fat) !== null ? entry.body_fat
+      : (bodyCarryForward("body_fat") ?? "");
     renderBodyChart(rows);
     renderBodySummary(rows);
     renderBodyList(rows);
@@ -2066,9 +2070,14 @@
       navigateToDate(dot.dataset.date);
     });
     ["body-weight", "body-fat"].forEach((id) => {
-      $(id).addEventListener("keydown", (e) => {
+      const input = $(id);
+      input.addEventListener("keydown", (e) => {
         if (e.key === "Enter") { e.preventDefault(); saveBody(); }
       });
+      // 点入即全选：预填默认值后直接键入新值就是整体替换，
+      // 不会被追加到旧值后面；点上下箭头不受选中状态影响。
+      input.addEventListener("focus", () => input.select());
+      input.addEventListener("click", () => input.select());
     });
     window.addEventListener("resize", () => {
       clearTimeout(chartResizeTimer);
