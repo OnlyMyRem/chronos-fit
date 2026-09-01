@@ -60,6 +60,31 @@ body.light #fullscreen-hint {
   color: var(--muted);
 }
 
+/* 护眼：色板取自 analogueclock.com 的暖米纸色（oklch 换算成 hex）。
+   JS 会同时挂上 .light 和 .eye，所以浅底家族共用的组件适配规则不必重写，
+   这里只换一套变量；必须排在 body.light 之后，靠源码顺序覆盖同权重规则。 */
+body.eye {
+  --bg:        #f4efe4;
+  --panel:     #fbf7ee;
+  --panel-2:   #e9e2d3;
+  --border:    #d8cfbd;
+  --text:      #2b2419;
+  --muted:     #6c6158;
+  --accent:    #7d4a06;
+  --accent-dim: rgba(122, 74, 6, 0.10);
+  --accent-2:  #96660f;
+  --done:      #b7ab95;
+  --danger:    #b3402f;
+  --success:   #3f842e;
+  --success-ink: #f4f8ee;
+  --accent-ink: #fffdf8;
+  --hang-bg: rgba(244, 239, 228, 0.86);
+}
+
+body.eye {
+  background: radial-gradient(1200px 600px at 70% -10%, #e7dfcc 0%, var(--bg) 60%);
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -97,6 +122,19 @@ body {
   align-items: center;
   min-height: 100vh;
   padding: calc(var(--hang-h) + 18px) 16px 92px;
+}
+
+/* 首屏遮罩：深色是 :root 的默认色，登录用户的主题要等接口回来才落地，
+   直接绘制就会「先黑后白」闪一下。app.js 在初始数据落地后加 .ready 放行，
+   在此之前整页不绘制、连 body 底色也去掉，只露出浏览器默认底。 */
+html:not(.ready) {
+  /* 根元素决定画布底色：放行前交给浏览器/系统偏好，而不是 app 的深色默认。 */
+  color-scheme: light dark;
+}
+
+html:not(.ready) body {
+  visibility: hidden;
+  background: none;
 }
 
 /* ---------- Hanging bar ---------- */
@@ -187,6 +225,17 @@ body.scrolled .hang-clock {
 .icon-btn:hover {
   border-color: var(--accent);
   background: var(--accent-dim);
+}
+
+/* 默认主题已是夜间时，主题按钮没有可切换的目标，置灰且不吃 hover 样式。 */
+.icon-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.icon-btn:disabled:hover {
+  border-color: var(--border);
+  background: transparent;
 }
 
 /* For buttons with short text labels (e.g. language "EN"/"中" or the compact

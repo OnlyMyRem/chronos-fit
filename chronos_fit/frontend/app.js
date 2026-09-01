@@ -23,7 +23,8 @@
       importDone: "导入完成：共 {n} 条", importSkipped: "，忽略 {n} 行无法识别的内容",
       importEmpty: "该文件里没有可导入的记录", importPickFile: "请选择 .csv 或 .xlsx 文件",
       importFailed: "导入失败",
-      moreThemeToLight: "切换为浅色主题", moreThemeToDark: "切换为深色主题",
+      moreThemeToNight: "切换到夜间主题", moreThemeToDefault: "恢复默认主题",
+      moreThemeNightOnly: "默认主题已是夜间",
       moreLangToEn: "切换为英文", moreLangToZh: "切换为中文",
       fullscreenHint: '已进入全屏 · 按 <kbd>Esc</kbd> 或 <kbd>F11</kbd> 退出全屏',
       calendarBtn: "📅 日历", mealsBtn: "🍽 三餐",
@@ -148,7 +149,7 @@
       genderUnset: "未填写", genderMale: "男", genderFemale: "女",
       saveProfile: "保存资料", profileSaved: "资料已保存",
       heightRangeErr: "身高需在 50–250 cm 之间",
-      themeDark: "深色", themeLight: "浅色", themeSystem: "跟随系统",
+      themeDark: "深色", themeLight: "浅色", themeEye: "护眼", themeSystem: "跟随系统",
       settingsPassword: "修改密码", oldPasswordPh: "原密码", newPasswordPh: "新密码（至少 6 位）",
       savePassword: "保存新密码", passwordNeedBoth: "请填写原密码和新密码",
       passwordSaved: "密码已更新",
@@ -179,7 +180,8 @@
       importDone: "Imported {n} records", importSkipped: ", skipped {n} unrecognized rows",
       importEmpty: "No importable records found in that file", importPickFile: "Please pick a .csv or .xlsx file",
       importFailed: "Import failed",
-      moreThemeToLight: "Switch to light theme", moreThemeToDark: "Switch to dark theme",
+      moreThemeToNight: "Switch to night theme", moreThemeToDefault: "Back to default theme",
+      moreThemeNightOnly: "Default theme is already night",
       moreLangToEn: "Switch to English", moreLangToZh: "Switch to Chinese",
       fullscreenHint: 'Fullscreen · press <kbd>Esc</kbd> or <kbd>F11</kbd> to exit',
       calendarBtn: "📅 Calendar", mealsBtn: "🍽 Meals",
@@ -294,7 +296,7 @@
       genderUnset: "Not set", genderMale: "Male", genderFemale: "Female",
       saveProfile: "Save profile", profileSaved: "Profile saved",
       heightRangeErr: "Height must be 50–250 cm",
-      themeDark: "Dark", themeLight: "Light", themeSystem: "Follow system",
+      themeDark: "Dark", themeLight: "Light", themeEye: "Eye care", themeSystem: "Follow system",
       settingsPassword: "Change password", oldPasswordPh: "Current password",
       newPasswordPh: "New password (min 6 chars)",
       savePassword: "Save new password", passwordNeedBoth: "Fill in both passwords",
@@ -363,9 +365,7 @@
 
     // The settings dialog mirrors the same two switches.
     if ($("settings-lang")) $("settings-lang").value = LANG;
-    if ($("settings-theme")) {
-      $("settings-theme").value = document.body.classList.contains("light") ? "light" : "dark";
-    }
+    if ($("settings-theme")) $("settings-theme").value = defaultTheme;
 
     refreshI18nDynamic();
   }
@@ -409,26 +409,42 @@
   }
 
   // ---------- Theme ----------
-  // 三态主题：system（跟随系统）/ dark / light。
-  // 游客默认跟随系统（prefers-color-scheme）；登录用户在设置里三选一，
-  // 持久化到账号（跨设备一致），并实时监听系统明暗变化。
-  let themeMode = "system";
+  // 设置里的默认主题有四态：system（跟随系统）/ dark（夜间）/ light（日间）/ eye（护眼）。
+  // 顶栏按钮只是本次会话的临时覆盖：在「默认主题」与「夜间」之间来回切，不写库，刷新即回默认。
+  // 默认主题本身就落在夜间时没有可切换的目标，按钮置灰。
+  const THEME_MODES = ["system", "dark", "light", "eye"];
   const systemLightMQ = window.matchMedia("(prefers-color-scheme: light)");
+  let defaultTheme = "system";
+  let nightOverride = false;
 
-  function applyThemeMode(mode) {
-    themeMode = mode === "dark" || mode === "light" ? mode : "system";
-    const isLight =
-      themeMode === "light" || (themeMode === "system" && systemLightMQ.matches);
-    document.body.classList.toggle("light", isLight);
+  // system 由 prefers-color-scheme 落地成 light 或 dark。
+  function resolveTheme(mode) {
+    if (mode !== "system") return mode;
+    return systemLightMQ.matches ? "light" : "dark";
+  }
+
+  function shownTheme() {
+    return nightOverride ? "dark" : resolveTheme(defaultTheme);
+  }
+
+  function applyTheme() {
+    const theme = shownTheme();
+    // light 与 eye 同属浅色家族：组件的浅底适配规则都挂在 .light 上，.eye 只换一套色板。
+    document.body.classList.toggle("light", theme === "light" || theme === "eye");
+    document.body.classList.toggle("eye", theme === "eye");
     syncTopBarButtons();
-    if ($("settings-theme")) $("settings-theme").value = themeMode;
+    if ($("settings-theme")) $("settings-theme").value = defaultTheme;
+  }
+
+  // 一旦明确选定新的默认主题，临时的夜间覆盖就让位给它。
+  function setDefaultTheme(mode) {
+    defaultTheme = THEME_MODES.includes(mode) ? mode : "system";
+    nightOverride = false;
+    applyTheme();
   }
 
   function initTheme() {
-    const stored = localStorage.getItem("chronosfit_theme");
-    applyThemeMode(
-      stored === "dark" || stored === "light" || stored === "system" ? stored : "system"
-    );
+    setDefaultTheme(localStorage.getItem("chronosfit_theme") || "system");
   }
 
   function persistTheme(mode) {
@@ -444,19 +460,24 @@
   }
 
   function toggleTheme() {
-    // 顶栏按钮：在「跟随系统」下点击 = 固定为当前实际明暗的反面；
-    // 已是固定模式则继续在深 / 浅之间切换。
-    const next = document.body.classList.contains("light") ? "dark" : "light";
-    applyThemeMode(next);
-    persistTheme(next);
+    if (resolveTheme(defaultTheme) === "dark") return;
+    nightOverride = !nightOverride;
+    applyTheme();
   }
 
   initTheme();
 
   // 跟随系统模式下，系统明暗变化时实时切换。
-  systemLightMQ.addEventListener("change", () => {
-    if (themeMode === "system") applyThemeMode("system");
-  });
+  systemLightMQ.addEventListener("change", () => applyTheme());
+
+  // ---------- 首屏遮罩 ----------
+  // 登录用户的主题要等 /api/auth/me 回来才知道，先画深色就会「闪一下」。
+  // 初始数据落地前整页不绘制，只露出浏览器默认底色；超时兜底保证接口挂住时不会永远空白。
+  function revealPage() {
+    clearTimeout(revealTimer);
+    document.documentElement.classList.add("ready");
+  }
+  const revealTimer = setTimeout(revealPage, 2500);
 
   // ---------- App state ----------
   let plans = {};
@@ -558,7 +579,7 @@
     currentUser = data.user;
     updateAuthUI();
     if (isLoggedIn && currentUser.language) applyLang(currentUser.language);
-    if (isLoggedIn && currentUser.theme) applyThemeMode(currentUser.theme);
+    if (isLoggedIn && currentUser.theme) setDefaultTheme(currentUser.theme);
   }
 
   function updateAuthUI() {
@@ -590,13 +611,15 @@
   // 顶部按钮的「状态镜像」：主题按钮图标 + 语言按钮文字。
   // 两者都显示「点下去会切到什么」，而不是当前状态，这样标签本身就是提示。
   function syncTopBarButtons() {
-    const isLight = document.body.classList.contains("light");
     const themeBtn = $("theme-btn");
     if (themeBtn) {
-      // 图标同样表示「点下去会切到」：深色时显示 ☀️，浅色时显示 🌙。
-      themeBtn.textContent = isLight ? "🌙" : "☀️";
-      themeBtn.setAttribute("aria-pressed", isLight ? "true" : "false");
-      themeBtn.title = t(isLight ? "moreThemeToDark" : "moreThemeToLight");
+      // 图标表示「点下去会切到」：默认主题下是 🌙（切去夜间），临时夜间下是 ☀️（回默认）。
+      // 默认本身就落在夜间时没有可切换的目标，按钮置灰。
+      const locked = resolveTheme(defaultTheme) === "dark";
+      themeBtn.textContent = nightOverride ? "☀️" : "🌙";
+      themeBtn.disabled = locked;
+      themeBtn.setAttribute("aria-pressed", nightOverride ? "true" : "false");
+      themeBtn.title = t(locked ? "moreThemeNightOnly" : nightOverride ? "moreThemeToDefault" : "moreThemeToNight");
     }
     const langBtn = $("lang-btn");
     if (langBtn) {
@@ -783,7 +806,7 @@
     });
     $("settings-lang").addEventListener("change", (e) => setLang(e.target.value));
     $("settings-theme").addEventListener("change", (e) => {
-      applyThemeMode(e.target.value);
+      setDefaultTheme(e.target.value);
       persistTheme(e.target.value);
     });
     $("settings-save-profile").addEventListener("click", saveProfile);
@@ -1082,7 +1105,7 @@
     updateAuthUI();
     applyLang(localStorage.getItem("chronosfit_lang") || "zh");
     // 退出后回到游客主题：本机显式设置优先，否则跟随系统。
-    applyThemeMode(localStorage.getItem("chronosfit_theme") || "system");
+    setDefaultTheme(localStorage.getItem("chronosfit_theme") || "system");
     loaded = true;
     await reloadPlans();
     reloadAll();
@@ -1241,6 +1264,7 @@
       updateProgress();
       cb.disabled = false;
       setStatus(`${t("savedStatus")} ${new Date().toLocaleTimeString()}`);
+      if (cb.checked) playToggleTone();
       return;
     }
 
@@ -1259,6 +1283,7 @@
       li.classList.toggle("done", cb.checked);
       updateProgress();
       setStatus(`${t("savedStatus")} ${new Date().toLocaleTimeString()}`);
+      if (cb.checked) playToggleTone();
     } catch {
       cb.checked = prev;
       li.classList.toggle("done", prev);
@@ -2432,6 +2457,38 @@
     player.play().catch(() => synthTone("chime"));
   }
 
+  // 勾选完成音：一短一长的上行两音（哔—棱）。刻意比倒计时提示音轻，
+  // 因为它每勾一项就会响一次；也不走 playChime 的静音提示，那条文案属于倒计时。
+  function playDoneTone() {
+    try {
+      tone(1046.5, 0, 0.1, 0.26, "triangle");
+      tone(1567.98, 0.09, 0.42, 0.3, "sine");
+    } catch { /* 浏览器不允许发声时静默跳过 */ }
+  }
+
+  function allItemsDone() {
+    const boxes = [...document.querySelectorAll("#items .item input[type=checkbox]")];
+    return boxes.length > 0 && boxes.every((b) => b.checked);
+  }
+
+  // 全部完成音：C-E-G-C 四音上行琶音（嘟嘟嘟嘟），末音拖长并叠一个高音收束，像游戏通关。
+  // 一天只响一次，所以比 playDoneTone 更响。
+  function playClearFanfare() {
+    try {
+      const notes = [523.25, 659.25, 783.99, 1046.5];
+      notes.forEach((freq, i) => {
+        const last = i === notes.length - 1;
+        tone(freq, i * 0.13, last ? 0.6 : 0.14, 0.34, "triangle");
+        if (last) tone(1567.98, 0.39, 0.55, 0.16, "sine");
+      });
+    } catch { /* 浏览器不允许发声时静默跳过 */ }
+  }
+
+  function playToggleTone() {
+    if (allItemsDone()) playClearFanfare();
+    else playDoneTone();
+  }
+
   function formatMs(ms) {
     const total = Math.max(0, Math.ceil(ms / 1000));
     const m = String(Math.floor(total / 60)).padStart(2, "0");
@@ -3445,6 +3502,7 @@
       console.error("[chronosfit] initial load failed", err);
       showInitFailure();
     }
+    revealPage();
   }
 
   async function loadInitialData() {

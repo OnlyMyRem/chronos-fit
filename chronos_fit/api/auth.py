@@ -286,8 +286,8 @@ def set_theme(payload: ThemePayload, uid: CurrentUid, session: DbSession):
     if not uid:
         raise HTTPException(401, "请先登录")
     theme = (payload.theme or "").strip()
-    if theme not in ("system", "dark", "light"):
-        raise HTTPException(400, "主题仅支持 system / dark / light")
+    if theme not in ("system", "dark", "light", "eye"):
+        raise HTTPException(400, "主题仅支持 system / dark / light / eye")
     session.execute(update(User).where(User.id == uid).values(theme=theme))
     return {"ok": True, "theme": theme}
 
