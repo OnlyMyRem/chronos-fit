@@ -112,7 +112,8 @@
       breakfast: "早餐", lunch: "午餐", dinner: "晚餐",
       mealCount: "{n} 项", mealCountOne: "{n} 项", mealAddPh: "点此添加…",
       // body stats
-      bodyTitle: "身体数据", bodyRange30: "30 天", bodyRange90: "90 天", bodyRangeAll: "全部",
+      bodyTitle: "身体数据", bodyRange7: "1 周", bodyRange14: "2 周", bodyRange30: "30 天",
+      bodyRange60: "60 天", bodyRange90: "90 天", bodyRangeAll: "全部",
       bodyWeight: "体重 (kg)",
       bodyFat: "体脂 (%)",
       bodySave: "记录", bodySaving: "保存中…",
@@ -131,7 +132,7 @@
       bmiLow: "偏低", bmiNormal: "标准", bmiOver: "超重", bmiObese: "肥胖",
       bmiDotTip: "BMI {v}",
       // 累计变化 + 目标进度（录入行右侧胶囊）
-      bodyTrendTip: "自首条记录 {d} 至 {to} 的累计变化",
+      bodyTrendTip: "当前区间累计变化：{d} 至 {to}",
       goalTitle: "目标体重与体脂",
       goalHint: "留空表示不设该项，两项都留空即清除目标。",
       goalWeight: "目标体重 (kg)",
@@ -287,7 +288,8 @@
       weekdayTaken: 'Weekday binding taken by "{x}"; the new plan is not bound',
       breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner",
       mealCount: "{n} items", mealCountOne: "{n} item", mealAddPh: "Tap to add…",
-      bodyTitle: "Body Stats", bodyRange30: "30 days", bodyRange90: "90 days", bodyRangeAll: "All",
+      bodyTitle: "Body Stats", bodyRange7: "1 wk", bodyRange14: "2 wks", bodyRange30: "30 days",
+      bodyRange60: "60 days", bodyRange90: "90 days", bodyRangeAll: "All",
       bodyWeight: "Weight (kg)",
       bodyFat: "Body fat (%)",
       bodySave: "Log", bodySaving: "Saving…",
@@ -1783,10 +1785,16 @@
     renderBody();
   }
 
+  // 当前精度的窗口起始日（含）；'' 表示「全部」不限。窗口含首尾共 N 天，
+  // 与图表横轴的 d0 = 今天 -(N-1) 天保持一致。
+  function bodyWindowCut() {
+    if (!bodyDays) return "";
+    return toISO(dateWithOffset(bjParts(), -(bodyDays - 1)));
+  }
+
   function bodyFiltered() {
-    if (!bodyDays) return bodyHistory;
-    // 窗口含首尾共 N 天，与图表横轴的 d0 = 今天 -(N-1) 天保持一致。
-    const cut = toISO(dateWithOffset(bjParts(), -(bodyDays - 1)));
+    const cut = bodyWindowCut();
+    if (!cut) return bodyHistory;
     return bodyHistory.filter((r) => r.log_date >= cut);
   }
 
@@ -1845,13 +1853,16 @@
     return bodyCarryForward(key, currentDate);
   }
 
-  // 累计变化：从该指标的首条记录到查看日期。不足两条记录谈不上变化。
+  /* 累计变化：只在右上角当前精度窗口内取首末两条记录，窗口外的一律不看。
+     选「全部」时即从首条记录算到查看日期。窗口内不足两天谈不上变化，返回 null。 */
   function bodyCumulative(key) {
+    const cut = bodyWindowCut();
     let first = null;
     let last = null;
     bodyHistory.forEach((row) => {
       const v = bodyNum(row[key]);
       if (v === null || row.log_date > currentDate) return;
+      if (cut && row.log_date < cut) return;
       if (first === null) first = { date: row.log_date, value: v };
       last = { date: row.log_date, value: v };
     });

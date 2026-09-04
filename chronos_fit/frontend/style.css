@@ -2626,10 +2626,14 @@ body.light dialog::backdrop {
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--text);
+  flex: 0 0 auto;
 }
 
+/* 精度切换：六个胶囊放不下一行时自己折到第二行，并保持右对齐贴着卡片右边。 */
 .body-range {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 4px;
 }
 
