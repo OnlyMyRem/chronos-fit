@@ -81,7 +81,7 @@
       metroSound: "提示音", metroPreview: "试听",
       minutePh: "分", secondPh: "秒",
       metroMinN: "{n} 分钟", metroSecN: "{n} 秒", metroMinSec: "{m} 分 {s} 秒",
-      metroPauseTip: "暂停", metroResumeTip: "继续", metroEditTip: "编辑", metroDeleteTip: "删除",
+      metroRestartTip: "重新开始", metroPauseTip: "暂停", metroResumeTip: "继续", metroEditTip: "编辑", metroDeleteTip: "删除",
       metroPaused: "已暂停", metroEmpty: "暂无计时器",
       metroDurationErr: "请填写时长（1 秒 – 60 分钟）",
       metroNeedLogin: "请先登录后再管理倒计时",
@@ -111,7 +111,7 @@
       weekdayTaken: "星期绑定已被「{x}」占用，新计划未绑定星期",
       // meals
       breakfast: "早餐", lunch: "午餐", dinner: "晚餐",
-      mealCount: "{n} 项", mealCountOne: "{n} 项", mealEmpty: "暂无记录", mealAddPh: "点此添加…",
+      mealCount: "{n} 项", mealCountOne: "{n} 项", mealAddPh: "点此添加…",
       // body stats
       bodyTitle: "身体数据", bodyRange30: "30 天", bodyRange90: "90 天", bodyRangeAll: "全部",
       bodyWeight: "体重 (kg)",
@@ -231,7 +231,7 @@
       metroSound: "Chime", metroPreview: "Preview",
       minutePh: "min", secondPh: "sec",
       metroMinN: "{n} min", metroSecN: "{n} sec", metroMinSec: "{m}m {s}s",
-      metroPauseTip: "Pause", metroResumeTip: "Resume", metroEditTip: "Edit", metroDeleteTip: "Delete",
+      metroRestartTip: "Restart", metroPauseTip: "Pause", metroResumeTip: "Resume", metroEditTip: "Edit", metroDeleteTip: "Delete",
       metroPaused: "Paused", metroEmpty: "No timers yet",
       metroDurationErr: "Enter a duration between 1 second and 60 minutes",
       metroNeedLogin: "Please sign in to manage countdowns",
@@ -259,7 +259,7 @@
       planDeleted: "Plan deleted: {x}",
       weekdayTaken: 'Weekday binding taken by "{x}"; the new plan is not bound',
       breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner",
-      mealCount: "{n} items", mealCountOne: "{n} item", mealEmpty: "No entries", mealAddPh: "Tap to add…",
+      mealCount: "{n} items", mealCountOne: "{n} item", mealAddPh: "Tap to add…",
       bodyTitle: "Body Stats", bodyRange30: "30 days", bodyRange90: "90 days", bodyRangeAll: "All",
       bodyWeight: "Weight (kg)",
       bodyFat: "Body fat (%)",
@@ -1362,12 +1362,6 @@
       const box = document.querySelector(`.meals-col[data-meal="${m.key}"] ul`);
       if (!box) return;
       box.innerHTML = "";
-      if (mealLogs.length === 0) {
-        const empty = document.createElement("li");
-        empty.className = "meal-empty";
-        empty.textContent = t("mealEmpty");
-        box.append(empty);
-      }
       mealLogs.forEach((l) => box.append(makeMealLi(m.key, l.item_name, l.is_completed === 1)));
       const logged = new Set(mealLogs.map((l) => l.item_name));
       suggestionsFor(m.key, logged).forEach((name) => box.append(makeMealSuggestLi(m.key, name)));
@@ -2532,16 +2526,22 @@
 
     const btns = document.createElement("span");
     btns.className = "pill-btns";
+    const owned = Boolean(timer.id);
     btns.append(
-      pillButton(timer.enabled ? "metroPauseTip" : "metroResumeTip", timer.enabled ? "⏸" : "▶",
+      pillButton("metroRestartTip", "restart", () => restartTimer(timer)),
+      pillButton(timer.enabled ? "metroPauseTip" : "metroResumeTip", timer.enabled ? "pause" : "play",
         () => toggleTimer(timer)),
+      // 访客的倒计时是只读种子数据，没有 id 可改；按钮照常显示，点击时引导登录，
+      // 否则会被当成"按钮消失了"。
+      pillButton("metroEditTip", "edit", () => {
+        if (owned) openTimerEditor(timer.id);
+        else requireMetroLogin();
+      }),
+      pillButton("metroDeleteTip", "close", () => {
+        if (owned) deleteTimer(timer);
+        else requireMetroLogin();
+      }),
     );
-    if (timer.id) {
-      btns.append(
-        pillButton("metroEditTip", "✎", () => openTimerEditor(timer.id)),
-        pillButton("metroDeleteTip", "\u2715", () => deleteTimer(timer)),
-      );
-    }
 
     row.append(text, btns);
     pill.append(fill, row);
@@ -2565,12 +2565,25 @@
     return pill;
   }
 
-  function pillButton(tipKey, glyph, onClick) {
+  // 图标必须是内联 SVG 而不是 ↺⏸✎✕ 这类 Unicode 字形：Arial 没有这几个字符，
+  // 浏览器逐字回退到不同符号字体，基线和字身高度都不一样，一排四个必然错位。
+  const PILL_ICONS = {
+    restart: '<polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />',
+    pause: '<line x1="9" y1="4.5" x2="9" y2="19.5" /><line x1="15" y1="4.5" x2="15" y2="19.5" />',
+    play: '<path d="M6.5 4.8 19 12 6.5 19.2Z" />',
+    edit: '<path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />',
+    close: '<path d="M18 6 6 18" /><path d="m6 6 12 12" />',
+  };
+
+  function pillButton(tipKey, icon, onClick) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "pill-btn";
     btn.title = t(tipKey);
-    btn.textContent = glyph;
+    btn.setAttribute("aria-label", btn.title);
+    btn.innerHTML =
+      `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" ` +
+      `stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${PILL_ICONS[icon] || ""}</svg>`;
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
       onClick();
@@ -2660,6 +2673,20 @@
     onDone();
   }
 
+  // 重新开始：从头跑完整时长。与「继续」不同，继续是接着暂停处跑，重新开始一定重新计数，
+  // 所以暂停状态下也要把 enabled 写回去，否则重置后仍停在满值不动。
+  function restartTimer(timer) {
+    const run = () => {
+      timer.enabled = 1;
+      timer.endsAt = Date.now() + timer.duration_sec * 1000;
+      timer.pausedRemain = 0;
+      timer.flashUntil = 0;
+      renderPills();
+    };
+    if (timer.enabled) run();
+    else patchTimer(timer, { enabled: true }, run);
+  }
+
   function toggleTimer(timer) {
     const enabled = timer.enabled ? 0 : 1;
     patchTimer(timer, { enabled: !!enabled }, () => {
@@ -2729,10 +2756,15 @@
     document.querySelectorAll("#metro-pills .metro-pill.is-new").forEach((p) => p.remove());
   }
 
+  // 访客的倒计时只读：编辑/删除统一引导登录，和新建按钮走同一条路径。
+  function requireMetroLogin() {
+    setStatus(t("metroNeedLogin"), "error");
+    openAuthModal("signin");
+  }
+
   function openTimerEditor(target) {
     if (!isLoggedIn) {
-      setStatus(t("metroNeedLogin"), "error");
-      openAuthModal("signin");
+      requireMetroLogin();
       return;
     }
     if (editingTimer === target) { closeTimerEditor(); return; }

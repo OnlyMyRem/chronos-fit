@@ -1735,6 +1735,8 @@ body.rail-dragging .rail-dragged {
 }
 
 .pill-btn {
+  display: grid;
+  place-items: center;
   width: 22px;
   height: 22px;
   padding: 0;
@@ -1742,9 +1744,14 @@ body.rail-dragging .rail-dragged {
   border-radius: 999px;
   background: transparent;
   color: var(--muted);
-  font-size: 0.7rem;
   cursor: pointer;
   transition: color 0.15s ease, background 0.15s ease;
+}
+
+.pill-btn svg {
+  display: block;
+  width: 11px;
+  height: 11px;
 }
 
 .pill-btn:hover {
@@ -3028,15 +3035,6 @@ text.bc-fat {
 .meals-col .items {
   padding: 8px 12px;
   min-height: 44px;
-}
-
-.meals-col .items .meal-empty {
-  text-align: center;
-  color: var(--muted);
-  font-size: 0.85rem;
-  padding: 14px 0;
-  opacity: 0.6;
-  border: none;
 }
 
 .meals-col .item {
