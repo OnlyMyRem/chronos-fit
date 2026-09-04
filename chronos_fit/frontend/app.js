@@ -114,6 +114,7 @@
       // body stats
       bodyTitle: "身体数据", bodyRange7: "1 周", bodyRange14: "2 周", bodyRange30: "30 天",
       bodyRange60: "60 天", bodyRange90: "90 天", bodyRangeAll: "全部",
+      bodyRangeTip: "按最近 N 个「有记录的日子」取窗口：天天记录时就是最近 N 天，断档几天会自动往前多取几天。",
       bodyWeight: "体重 (kg)",
       bodyFat: "体脂 (%)",
       bodySave: "记录", bodySaving: "保存中…",
@@ -290,6 +291,7 @@
       mealCount: "{n} items", mealCountOne: "{n} item", mealAddPh: "Tap to add…",
       bodyTitle: "Body Stats", bodyRange7: "1 wk", bodyRange14: "2 wks", bodyRange30: "30 days",
       bodyRange60: "60 days", bodyRange90: "90 days", bodyRangeAll: "All",
+      bodyRangeTip: "Each range covers the last N days that have records — the same as N calendar days when you log every day.",
       bodyWeight: "Weight (kg)",
       bodyFat: "Body fat (%)",
       bodySave: "Log", bodySaving: "Saving…",
@@ -1785,17 +1787,25 @@
     renderBody();
   }
 
-  // 当前精度的窗口起始日（含）；'' 表示「全部」不限。窗口含首尾共 N 天，
-  // 与图表横轴的 d0 = 今天 -(N-1) 天保持一致。
+  /* 精度窗口的起始日：取「最近 N 个有记录的日子」里最早的那一天，N = 右上角选的天数。
+     按记录日数而不是日历天数，是因为断档时日历窗口会把大半周切掉——
+     8/25 开始记录、8/30 和 8/31 没记，选 1 周就只剩 9/1 起的三个点。
+     天天记录时两种算法完全等价；记录日数不足 N 则一条都不砍。'' 表示不限。 */
   function bodyWindowCut() {
     if (!bodyDays) return "";
-    return toISO(dateWithOffset(bjParts(), -(bodyDays - 1)));
+    const days = [...new Set(bodyHistory
+      .filter((r) => r.log_date <= currentDate &&
+        (bodyNum(r.weight) !== null || bodyNum(r.body_fat) !== null))
+      .map((r) => r.log_date))].sort();
+    if (!days.length) return "";
+    return days.length > bodyDays ? days[days.length - bodyDays] : days[0];
   }
 
+  // 卡片整体读作「截至查看日期的最近 N 个记录日」，所以右端也要收在 currentDate。
   function bodyFiltered() {
     const cut = bodyWindowCut();
-    if (!cut) return bodyHistory;
-    return bodyHistory.filter((r) => r.log_date >= cut);
+    return bodyHistory.filter((r) =>
+      (!cut || r.log_date >= cut) && r.log_date <= currentDate);
   }
 
   // Last recorded value of `key` on or before the viewed day — the number we carry
@@ -2101,12 +2111,15 @@
     const DAY = 86400000;
     let d0;
     let d1;
-    /* 选 30/90 天时横轴用「固定窗口」而不是「数据首尾」：右端锚定今天，
-       左端 = 今天 -(N-1) 天，于是每两天之间的像素宽度恒定，
-       只录了两天也不会被拉伸铺满整张图。选「全部」时才按数据跨度铺满。 */
+    /* 选 1 周 / 30 天等精度时横轴按窗口内首末记录铺开，右端补到查看日期：
+       于是一屏之内「两天之间的像素宽度」恒定，只录了两三天也不会被拉伸铺满整张图。
+       窗口是「最近 N 个记录日」，断档时跨度会大于 N 天，所以不能再按日历天数倒推左端。
+       选「全部」时按数据首尾铺满。 */
     if (bodyDays) {
-      d1 = Math.max(timeMs(toISO(bjParts())), Math.max(...stamps));
-      d0 = d1 - (bodyDays - 1) * DAY;
+      d1 = Math.max(timeMs(currentDate), Math.max(...stamps));
+      d0 = Math.min(...stamps);
+      // 只有一两天的记录时给出最小跨度，否则点会贴死右端、日期标签也会叠在一起。
+      if (d1 - d0 < 2 * DAY) d0 = d1 - 2 * DAY;
     } else {
       d0 = Math.min(...stamps);
       d1 = Math.max(...stamps);

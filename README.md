@@ -11,7 +11,7 @@
 | 打卡 | 勾选即时保存、自动划掉变灰；同一天同一动作 Upsert 不重复 |
 | 自定义项目 | 在计划里临时加动作，支持目标值 / 当前值 / 单位（如 俯卧撑 20 个） |
 | 三餐记录 | 早 / 中 / 晚三列，每列默认推荐最常记录的 3 样，跟随所选日期变化 |
-| 身体数据 | 体重 / 体脂选填，历史曲线可切换 1 周 / 2 周 / 30 / 60 / 90 天 / 全部，点圆点跳到当天记录；删除按钮右侧显示当前区间内的累计变化（降绿升红）与目标进度，目标体重 / 体脂支持 BMI 边界快选，并按近一周速度估算还需多久达成；设置里填身高后自动算 BMI 彩色徽章 |
+| 身体数据 | 体重 / 体脂选填，历史曲线可切换 1 周 / 2 周 / 30 / 60 / 90 天 / 全部（按最近 N 个**有记录的日子**取窗口，断档几天也不会把大半周切没），点圆点跳到当天记录；删除按钮右侧显示当前区间内的累计变化（降绿升红）与目标进度，目标体重 / 体脂支持 BMI 边界快选，并按近一周速度估算还需多久达成；设置里填身高后自动算 BMI 彩色徽章 |
 | 日历 | 左侧常驻月视图，标记有打卡的日期，点任意日期回看 / 补记录 |
 | 倒计时胶囊 | 右侧常驻，到点响铃自动重来；可新增、改名、改时长、暂停、删除，按账号保存 |
 | 侧栏自由摆放 | 日历与倒计时面板可拖到任意位置，位置刷新不丢 |
@@ -68,14 +68,25 @@ pip install dist/chronos_fit-*.whl
 
 ### 发布到 PyPI
 
-PyPI 项目名为 **chronos-fit**（导入名 `chronos_fit`，命令 `chronos-fit`）。在 pypi.org 注册账号并创建 API token 后：
+PyPI 项目名为 **chronos-fit**（导入名 `chronos_fit`，命令 `chronos-fit`）。日常发布走仓库根的 `release.sh`，一条命令完成改版本号 → 构建 wheel → 上传 PyPI → commit + push：
+
+```bash
+./release.sh                        # 交互式：先打印当前版本，再问新版本号与 commit message
+./release.sh 3.5.0 "英文一行说明"    # 免交互
+./release.sh --dry-run 3.5.0 "..."   # 只预演不执行
+```
+
+脚本会拒绝与当前版本相同、比当前版本更低、或 PyPI 上已存在的版本号（PyPI 永不允许覆盖同一版本）。
+
+在 pypi.org 注册账号并创建 API token 后，也可以手工分步执行：
 
 ```bash
 pip install twine
+./build_wheel.sh
 twine upload dist/*           # 提示 Username 填 __token__，Password 填 token
 ```
 
-发布成功后任意机器 `pip install chronos-fit` 即可。建议先发 TestPyPI 试装一次（`twine upload --repository testpypi dist/*`），确认无误再发正式源。
+发布成功后任意机器 `pip install chronos-fit` 即可。
 
 ## 部署
 
@@ -95,7 +106,7 @@ python -m venv .venv
 .venv/bin/pip install -e .
 ```
 
-两种装法都把下面的单元写到 `/etc/systemd/system/fit.service`，按装法选一份：
+两种装法都把下面的单元写到 `/etc/systemd/system/chronosfit.service`，按装法选一份：
 
 **方式一（whl 安装）**：部署目录无源码，数据默认生成在 `/opt/chronos-fit/data/`；沿用旧数据目录就加 `--data-dir`（不需要可去掉），改端口同理加 `--addr` / `--port`。
 
@@ -136,18 +147,7 @@ sudo systemctl enable --now chronosfit
 
 前面挂 Nginx 反向代理即可对外提供 HTTPS。
 
-**更新**：数据库表结构在启动时自动升级（见「从旧版本升级」），只需更新程序本体后重启：
-
-```bash
-# 方式一（whl 安装）：pip 升级，锁版本可写 chronos-fit==x.y.z
-cd /opt/chronos-fit && sudo .venv/bin/pip install -U chronos-fit -i https://pypi.org/simple/
-
-# 方式二（源码安装）：拉新代码；若 pyproject.toml 依赖有变化，重跑一次可编辑安装
-cd /opt/chronos-fit && git pull
-# .venv/bin/pip install -e .
-
-sudo systemctl restart fit
-```
+**更新到新版本**：换程序本体 + 重启服务即可，表结构在启动时自动升级，命令见下文「更新到新版本」。
 
 ### Docker
 
@@ -159,6 +159,23 @@ docker compose up -d --build
 
 - **外部 MySQL**：`.env` 里设 `DATABASE_URL=mysql+pymysql://user:密码@host.docker.internal:3306/chronosfit?charset=utf8mb4`（`host.docker.internal` 指向宿主机，远程机器换成内网 IP）。
 - **compose 自带**：`docker compose --profile mysql up -d --build`，并用 `.env` 设好 `DATABASE_URL`。
+
+## 更新到新版本
+
+表结构在每次启动时自动升级（见「从旧版本升级」），所以升级只有两步：换程序、重启服务。先 `stop` 再装，避免进程正握着被替换的文件。
+
+```bash
+# 裸机 systemd（whl 安装）
+sudo systemctl stop chronosfit
+cd /opt/chronos-fit && sudo .venv/bin/pip install -U chronos-fit -i https://pypi.org/simple/
+sudo systemctl start chronosfit
+systemctl status chronosfit        # 确认已起来；启动日志看 journalctl -u chronosfit -n 20
+```
+
+- 锁版本：把 `chronos-fit` 写成 `chronos-fit==x.y.z`。
+- 官方源 `-i https://pypi.org/simple/`：国内镜像（阿里云等）同步新包常有几小时延迟，不加会报 `Could not find a version`。
+- 源码安装（`pip install -e .`）：中间一行换成 `cd /opt/chronos-fit && git pull`，只有 `pyproject.toml` 的依赖变了才需要再跑一次 `sudo .venv/bin/pip install -e .`。
+- Docker：`docker compose up -d --build` 即可，镜像内 pip 自动取最新版；锁版本加 `--build-arg CHRONOSFIT_VERSION=x.y.z`，镜像源取不到包时先在仓库执行 `./build_wheel.sh`，构建会自动回退用本地 `dist/*.whl`。
 
 ## 从旧版本升级
 
