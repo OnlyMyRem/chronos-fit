@@ -17,14 +17,13 @@
       tzLabel: "北京时间 (UTC+8)",
       fullscreenTip: "全屏", fullscreenTipExit: "退出全屏",
       dataBtn: "数据", dataTip: "导入 / 导出数据",
-      themeTip: "切换主题", langTip: "切换语言",
+      langTip: "切换语言",
       moreExport: "导出数据…",
       moreImport: "导入数据…", importRunning: "正在导入…",
       importDone: "导入完成：共 {n} 条", importSkipped: "，忽略 {n} 行无法识别的内容",
       importEmpty: "该文件里没有可导入的记录", importPickFile: "请选择 .csv 或 .xlsx 文件",
       importFailed: "导入失败",
-      moreThemeToNight: "切换到夜间主题", moreThemeToDefault: "恢复默认主题",
-      moreThemeNightOnly: "默认主题已是夜间",
+      themeNowNext: "当前主题：{now} · 点击切到 {next}",
       moreLangToEn: "切换为英文", moreLangToZh: "切换为中文",
       fullscreenHint: '已进入全屏 · 按 <kbd>Esc</kbd> 或 <kbd>F11</kbd> 退出全屏',
       calendarBtn: "📅 日历", mealsBtn: "🍽 三餐",
@@ -131,6 +130,35 @@
       bmiNeedHeight: "在「设置 · 身体信息」中填写身高后显示 BMI",
       bmiLow: "偏低", bmiNormal: "标准", bmiOver: "超重", bmiObese: "肥胖",
       bmiDotTip: "BMI {v}",
+      // 累计变化 + 目标进度（录入行右侧胶囊）
+      bodyTrendTip: "自首条记录 {d} 至 {to} 的累计变化",
+      goalTitle: "目标体重与体脂",
+      goalHint: "留空表示不设该项，两项都留空即清除目标。",
+      goalWeight: "目标体重 (kg)",
+      goalFat: "目标体脂 (%)",
+      goalBmiQuick: "按 BMI 边界快选",
+      goalBmiLow: "下限 18.5 · {v} kg",
+      goalBmiHigh: "上限 24.0 · {v} kg",
+      goalNoHeight: "先在「设置 · 身体信息」填写身高",
+      goalSave: "保存目标",
+      goalClear: "清除目标",
+      goalSaved: "目标已保存",
+      goalCleared: "已清除目标",
+      goalNeedValue: "两项都可以留空，但至少填写一项（要清除请点「清除目标」）",
+      goalBtn: "设置目标",
+      goalBtnTip: "设定目标体重与体脂",
+      goalLegendName: "目标体重",
+      goalFatName: "目标体脂",
+      goalRemain: "还差 {v}",
+      goalReached: "已达成",
+      goalEtaDays: "约 {n} 天",
+      goalEtaWeeks: "约 {n} 周",
+      goalEtaMonths: "约 {n} 个月",
+      goalEtaYear: "1 年以上",
+      goalStalled: "近期未在接近目标",
+      goalNoRecord: "尚无记录",
+      goalPaceTip: "近 {d} 天速度 {p}/周",
+      goalNoPaceTip: "记录太少，暂无法按周速度估算",
       mealSuggestTip: "根据你以往的记录推荐", dismissSuggestion: "不再显示该推荐",
       // export dialog
       exportTitle: "导出历史数据",
@@ -174,14 +202,13 @@
       tzLabel: "Beijing Time (UTC+8)",
       fullscreenTip: "Fullscreen", fullscreenTipExit: "Exit fullscreen",
       dataBtn: "Data", dataTip: "Import / export data",
-      themeTip: "Toggle theme", langTip: "Switch language",
+      langTip: "Switch language",
       moreExport: "Export data…",
       moreImport: "Import data…", importRunning: "Importing…",
       importDone: "Imported {n} records", importSkipped: ", skipped {n} unrecognized rows",
       importEmpty: "No importable records found in that file", importPickFile: "Please pick a .csv or .xlsx file",
       importFailed: "Import failed",
-      moreThemeToNight: "Switch to night theme", moreThemeToDefault: "Back to default theme",
-      moreThemeNightOnly: "Default theme is already night",
+      themeNowNext: "Theme: {now} · click for {next}",
       moreLangToEn: "Switch to English", moreLangToZh: "Switch to Chinese",
       fullscreenHint: 'Fullscreen · press <kbd>Esc</kbd> or <kbd>F11</kbd> to exit',
       calendarBtn: "📅 Calendar", mealsBtn: "🍽 Meals",
@@ -278,6 +305,34 @@
       bmiNeedHeight: "Add your height in Settings · Body info to see BMI",
       bmiLow: "Underweight", bmiNormal: "Normal", bmiOver: "Overweight", bmiObese: "Obese",
       bmiDotTip: "BMI {v}",
+      bodyTrendTip: "Cumulative change from {d} to {to}",
+      goalTitle: "Weight & body fat goals",
+      goalHint: "Leave a field empty to skip it — empty both to clear the goals.",
+      goalWeight: "Target weight (kg)",
+      goalFat: "Target body fat (%)",
+      goalBmiQuick: "Pick a BMI boundary",
+      goalBmiLow: "Low 18.5 · {v} kg",
+      goalBmiHigh: "High 24.0 · {v} kg",
+      goalNoHeight: "Add your height in Settings · Body info first",
+      goalSave: "Save goals",
+      goalClear: "Clear goals",
+      goalSaved: "Goals saved",
+      goalCleared: "Goals cleared",
+      goalNeedValue: "Both fields are optional, but fill in at least one (use Clear to remove goals)",
+      goalBtn: "Set goal",
+      goalBtnTip: "Set target weight and body fat",
+      goalLegendName: "Goal weight",
+      goalFatName: "Goal body fat",
+      goalRemain: "{v} to go",
+      goalReached: "Reached",
+      goalEtaDays: "~{n} d",
+      goalEtaWeeks: "~{n} wk",
+      goalEtaMonths: "~{n} mo",
+      goalEtaYear: "over a year",
+      goalStalled: "not moving that way",
+      goalNoRecord: "No records yet",
+      goalPaceTip: "Last {d} days: {p} per week",
+      goalNoPaceTip: "Too few records to estimate a weekly pace",
       mealSuggestTip: "Suggested from your history", dismissSuggestion: "Hide this suggestion",
       exportTitle: "Export history",
       exportHint: "Pick a date range to export workouts, meals and body stats. JSON analyses well, CSV opens in Excel.",
@@ -388,6 +443,7 @@
       renderBodySummary(rows);
       renderBodyList(rows);
       renderBodyBmi();
+      renderBodyTrend();
     }
   }
 
@@ -409,13 +465,16 @@
   }
 
   // ---------- Theme ----------
-  // 设置里的默认主题有四态：system（跟随系统）/ dark（夜间）/ light（日间）/ eye（护眼）。
-  // 顶栏按钮只是本次会话的临时覆盖：在「默认主题」与「夜间」之间来回切，不写库，刷新即回默认。
-  // 默认主题本身就落在夜间时没有可切换的目标，按钮置灰。
+  // 四态：system（跟随系统）/ dark（深色）/ light（浅色）/ eye（护眼）。
+  // 顶栏图标按 THEME_CYCLE 循环，游客与登录用户走同一条路：前者存 localStorage，
+  // 后者同时写回账号。图标显示「当前落在屏幕上的那个主题」，title 说明下一次点击会切到哪。
   const THEME_MODES = ["system", "dark", "light", "eye"];
+  // 顶栏图标的循环顺序：默认护眼起手，浅色 / 深色各一步可达，跟随系统放在最后。
+  const THEME_CYCLE = ["eye", "light", "dark", "system"];
+  const THEME_ICONS = { system: "🌗", dark: "🌙", light: "☀️", eye: "🍂" };
+  const THEME_LABEL_KEYS = { system: "themeSystem", dark: "themeDark", light: "themeLight", eye: "themeEye" };
   const systemLightMQ = window.matchMedia("(prefers-color-scheme: light)");
-  let defaultTheme = "system";
-  let nightOverride = false;
+  let defaultTheme = "eye";
 
   // system 由 prefers-color-scheme 落地成 light 或 dark。
   function resolveTheme(mode) {
@@ -424,7 +483,11 @@
   }
 
   function shownTheme() {
-    return nightOverride ? "dark" : resolveTheme(defaultTheme);
+    return resolveTheme(defaultTheme);
+  }
+
+  function nextTheme() {
+    return THEME_CYCLE[(THEME_CYCLE.indexOf(defaultTheme) + 1) % THEME_CYCLE.length];
   }
 
   function applyTheme() {
@@ -436,15 +499,13 @@
     if ($("settings-theme")) $("settings-theme").value = defaultTheme;
   }
 
-  // 一旦明确选定新的默认主题，临时的夜间覆盖就让位给它。
   function setDefaultTheme(mode) {
-    defaultTheme = THEME_MODES.includes(mode) ? mode : "system";
-    nightOverride = false;
+    defaultTheme = THEME_MODES.includes(mode) ? mode : "eye";
     applyTheme();
   }
 
   function initTheme() {
-    setDefaultTheme(localStorage.getItem("chronosfit_theme") || "system");
+    setDefaultTheme(localStorage.getItem("chronosfit_theme") || "eye");
   }
 
   function persistTheme(mode) {
@@ -454,15 +515,18 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ theme: mode }),
       }).catch(() => {});
-    } else {
-      localStorage.setItem("chronosfit_theme", mode);
     }
+    // 登录用户同样留一份本机副本：退出后立刻就是上一次看到的主题，
+    // 不必等 /api/auth/me 回来，也不会闪一下。
+    localStorage.setItem("chronosfit_theme", mode);
   }
 
-  function toggleTheme() {
-    if (resolveTheme(defaultTheme) === "dark") return;
-    nightOverride = !nightOverride;
-    applyTheme();
+  // 循环按「已存的偏好」走，不按落地出来的明暗走：跟随系统在浅色环境下点一下
+  // 应该回到护眼，而不是被解释成「从浅色出发」而跳去深色。
+  function cycleTheme() {
+    const next = nextTheme();
+    setDefaultTheme(next);
+    persistTheme(next);
   }
 
   initTheme();
@@ -608,18 +672,21 @@
     if (open) setDataMenu(false);
   }
 
-  // 顶部按钮的「状态镜像」：主题按钮图标 + 语言按钮文字。
-  // 两者都显示「点下去会切到什么」，而不是当前状态，这样标签本身就是提示。
+  // 顶部按钮的「状态镜像」：主题图标就是屏幕上正在显示的主题，语言按钮文字是点下去会切到的语言。
+  // 两者的 title 都写清「下一次点击会发生什么」，让标签本身就是提示。
+  // 跟随系统下「设置」与「屏幕上」不是一回事，所以主题文字要说清偏好正显示成什么。
+  function themeLabel(mode) {
+    const label = t(THEME_LABEL_KEYS[mode]);
+    return mode === "system" ? `${label} · ${t(THEME_LABEL_KEYS[resolveTheme(mode)])}` : label;
+  }
+
   function syncTopBarButtons() {
     const themeBtn = $("theme-btn");
     if (themeBtn) {
-      // 图标表示「点下去会切到」：默认主题下是 🌙（切去夜间），临时夜间下是 ☀️（回默认）。
-      // 默认本身就落在夜间时没有可切换的目标，按钮置灰。
-      const locked = resolveTheme(defaultTheme) === "dark";
-      themeBtn.textContent = nightOverride ? "☀️" : "🌙";
-      themeBtn.disabled = locked;
-      themeBtn.setAttribute("aria-pressed", nightOverride ? "true" : "false");
-      themeBtn.title = t(locked ? "moreThemeNightOnly" : nightOverride ? "moreThemeToDefault" : "moreThemeToNight");
+      const tip = t("themeNowNext", { now: themeLabel(defaultTheme), next: themeLabel(nextTheme()) });
+      themeBtn.textContent = THEME_ICONS[shownTheme()];
+      themeBtn.title = tip;
+      themeBtn.setAttribute("aria-label", tip);
     }
     const langBtn = $("lang-btn");
     if (langBtn) {
@@ -669,9 +736,11 @@
       }
     }
     if (!isLoggedIn) {
-      guestProfileWrite({ gender, height_cm });
+      // 合并写回：同一个 key 里还存着目标体重 / 目标体脂，整体覆盖会把它们抹掉。
+      guestProfileWrite({ ...guestProfileRead(), gender, height_cm });
       setSettingsStatus(t("profileSaved"), "ok");
       renderBodyBmi();
+      renderBodyChart(bodyFiltered());
       return;
     }
     try {
@@ -759,7 +828,7 @@
     });
     $("import-file").addEventListener("change", (e) => importFromFile(e.target));
 
-    $("theme-btn").addEventListener("click", toggleTheme);
+    $("theme-btn").addEventListener("click", cycleTheme);
     $("lang-btn").addEventListener("click", toggleLang);
   }
 
@@ -1104,8 +1173,8 @@
     currentUser = null;
     updateAuthUI();
     applyLang(localStorage.getItem("chronosfit_lang") || "zh");
-    // 退出后回到游客主题：本机显式设置优先，否则跟随系统。
-    setDefaultTheme(localStorage.getItem("chronosfit_theme") || "system");
+    // 退出后回到游客主题：本机存过的选择优先，没存过就是默认的护眼。
+    initTheme();
     loaded = true;
     await reloadPlans();
     reloadAll();
@@ -1637,19 +1706,32 @@
     return weightKg / (m * m);
   }
 
-  // 健康体重参考线对应的目标体重：超重（含肥胖）显示 BMI 24.0 的体重，
-  // 偏瘦显示 BMI 18.5 的体重（与标准区间下限一致）；已在标准区间则不显示。
-  // 返回 {weight, bmi} 或 null。
-  function targetWeightForChart() {
+  /* 体重轴上的参考线只画一条：用户自定义目标优先（「目标体重 x kg」），
+     没设目标时退回 BMI 边界——超重（含肥胖）取 24.0 的体重，偏瘦取 18.5
+     （与标准区间下限一致）；已在标准区间则不画。 */
+  // 返回 { weight, label, name } 或 null。
+  function weightRefLine() {
+    const goal = bodyGoalTargets().weight;
+    if (goal !== null) {
+      return {
+        weight: goal,
+        label: `${t("goalLegendName")} ${goal.toFixed(1)} kg`,
+        name: t("goalLegendName"),
+      };
+    }
     const height = profileHeightCm();
     if (!height) return null;
-    const entry = bodyHistory.find((r) => r.log_date === currentDate);
-    const weight = bodyNum(entry && entry.weight) ?? bodyCarryForward("weight");
+    const weight = bodyValueOn("weight");
     const bmi = bmiOf(weight, height);
     if (bmi === null) return null;
     const m = height / 100;
-    if (bmi >= 24.0) return { weight: 24.0 * m * m, bmi: 24.0 };
-    if (bmi < 18.5) return { weight: 18.5 * m * m, bmi: 18.5 };
+    const boundary = (bmiVal) => ({
+      weight: bmiVal * m * m,
+      label: `BMI ${bmiVal.toFixed(1)} · ${(bmiVal * m * m).toFixed(1)} kg`,
+      name: t("bmiTargetName"),
+    });
+    if (bmi >= 24.0) return boundary(24.0);
+    if (bmi < 18.5) return boundary(18.5);
     return null;
   }
 
@@ -1658,8 +1740,7 @@
     if (!el) return;
     const height = profileHeightCm();
     // 优先用当前查看日期的体重；没记录则沿用最近一次的数值。
-    const entry = bodyHistory.find((r) => r.log_date === currentDate);
-    const weight = bodyNum(entry && entry.weight) ?? bodyCarryForward("weight");
+    const weight = bodyValueOn("weight");
     const bmi = bmiOf(weight, height);
     if (bmi === null) {
       el.innerHTML = `<span class="bmi-hint">${t("bmiNeedHeight")}</span>`;
@@ -1711,18 +1792,240 @@
 
   // Last recorded value of `key` on or before the viewed day — the number we carry
   // forward as the grey default. Returns null when the user never logged it.
-  function bodyCarryForward(key) {
+  function bodyCarryForward(key, iso = currentDate) {
     let date = "";
     let value = null;
     bodyHistory.forEach((row) => {
       const v = bodyNum(row[key]);
-      if (v === null || row.log_date > currentDate) return;
+      if (v === null || row.log_date > iso) return;
       if (row.log_date >= date) {
         date = row.log_date;
         value = v;
       }
     });
     return value;
+  }
+
+  // 目标体重 / 目标体脂：登录用户随账号存在 users 表，游客存在本机 profile。
+  function bodyGoalTargets() {
+    if (isLoggedIn && currentUser) {
+      return {
+        weight: bodyNum(currentUser.target_weight),
+        fat: bodyNum(currentUser.target_body_fat),
+      };
+    }
+    const p = guestProfileRead();
+    return { weight: bodyNum(p.target_weight), fat: bodyNum(p.target_body_fat) };
+  }
+
+  async function writeBodyGoals(weight, body_fat) {
+    if (!isLoggedIn) {
+      guestProfileWrite({ ...guestProfileRead(), target_weight: weight, target_body_fat: body_fat });
+      return true;
+    }
+    const res = await fetch("/api/body/target", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ weight, body_fat }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setGoalStatus(data.detail || t("saveFailed"), true);
+      return false;
+    }
+    if (currentUser) {
+      currentUser.target_weight = weight;
+      currentUser.target_body_fat = body_fat;
+    }
+    return true;
+  }
+
+  // 该指标在查看日期的值：当天没记录就沿用最近一次，和 BMI 行同一规则。
+  function bodyValueOn(key) {
+    return bodyCarryForward(key, currentDate);
+  }
+
+  // 累计变化：从该指标的首条记录到查看日期。不足两条记录谈不上变化。
+  function bodyCumulative(key) {
+    let first = null;
+    let last = null;
+    bodyHistory.forEach((row) => {
+      const v = bodyNum(row[key]);
+      if (v === null || row.log_date > currentDate) return;
+      if (first === null) first = { date: row.log_date, value: v };
+      last = { date: row.log_date, value: v };
+    });
+    if (!first || last.date === first.date) return null;
+    return { delta: last.value - first.value, from: first.date, to: last.date };
+  }
+
+  function isoShift(iso, offsetDays) {
+    const [y, m, d] = iso.split("-").map(Number);
+    return toISO(dateWithOffset({ year: y, month: m, day: d }, offsetDays));
+  }
+
+  function isoDiffDays(from, to) {
+    return Math.round((timeMs(to) - timeMs(from)) / 86400000);
+  }
+
+  /* 一周的速度：最近一条记录 与 它往前 7 天那次沿用值 之间的斜率。
+     一周只录一次时前者会退回更早的记录，于是 days 变大、速度被摊平，
+     提示文案里的「近 N 天」如实说明算的是哪段。 */
+  function bodyPacePerWeek(key) {
+    const pts = bodyHistory.filter((r) => r.log_date <= currentDate && bodyNum(r[key]) !== null);
+    if (pts.length < 2) return null;
+    const last = pts[pts.length - 1];
+    const base = [...pts].reverse().find((r) => r.log_date <= isoShift(last.log_date, -7)) || pts[0];
+    const days = isoDiffDays(base.log_date, last.log_date);
+    if (base === last || days < 1) return null;
+    return {
+      perWeek: ((bodyNum(last[key]) - bodyNum(base[key])) / days) * 7,
+      days,
+    };
+  }
+
+  /* 用「还差多少」除以「一周的变化量」得到周数，再按量级换成天 / 周 / 月。
+     速度与目标同向（或在原地踏步）时不给估算——那时该说的是没进展。 */
+  function estimateGoalEta(need, perWeek) {
+    if (!perWeek || Math.abs(perWeek) < 0.05) return { stalled: true };
+    if (need * perWeek >= 0) return { stalled: true };
+    const weeks = Math.abs(need / perWeek);
+    const days = weeks * 7;
+    if (days < 14) return { text: t("goalEtaDays", { n: Math.max(1, Math.round(days)) }) };
+    if (weeks < 26) return { text: t("goalEtaWeeks", { n: Math.round(weeks) }) };
+    if (weeks < 52) return { text: t("goalEtaMonths", { n: Math.round(weeks / 4.345) }) };
+    return { text: t("goalEtaYear") };
+  }
+
+  // 单个目标在查看日期的进度：{ state, label, tip }，label 直接上胶囊，tip 收全部细节。
+  function goalProgress(key, target, name) {
+    const unit = key === "weight" ? " kg" : " %";
+    const current = bodyValueOn(key);
+    const parts = [`${t(key === "weight" ? "goalLegendName" : "goalFatName")} ${target.toFixed(1)}${unit}`];
+    if (current === null) {
+      return { label: `${name} ${t("goalNoRecord")}`, tip: parts.join(" · ") };
+    }
+    parts.push(`${t("bodyLatest")} ${current.toFixed(1)}${unit}`);
+    const need = current - target;
+    if (Math.abs(need) < 0.05) {
+      return { label: `${name} ${t("goalReached")}`, tip: parts.join(" · "), done: true };
+    }
+    const pace = bodyPacePerWeek(key);
+    if (!pace) parts.push(t("goalNoPaceTip"));
+    else parts.push(t("goalPaceTip", {
+      d: pace.days,
+      p: `${pace.perWeek > 0 ? "+" : ""}${pace.perWeek.toFixed(1)}${unit}`,
+    }));
+    const remain = `${name} ${t("goalRemain", { v: Math.abs(need).toFixed(1) + unit })}`;
+    const eta = pace ? estimateGoalEta(need, pace.perWeek) : null;
+    if (eta && eta.stalled) parts.push(t("goalStalled"));
+    return {
+      label: eta && eta.text ? `${remain} · ${eta.text}` : remain,
+      tip: parts.join(" · "),
+    };
+  }
+
+  // 降 = 绿色向下箭头，升 = 红色向上箭头；持平只留数字，不加箭头。
+  function deltaSpan(c, unit) {
+    if (!c) return "";
+    const cls = c.delta < 0 ? "down" : c.delta > 0 ? "up" : "flat";
+    const arrow = c.delta < 0 ? "\u25bc" : c.delta > 0 ? "\u25b2" : "";
+    return `<span class="bd-cd ${cls}" title="${t("bodyTrendTip", { d: c.from, to: c.to })}">` +
+      `${arrow}${Math.abs(c.delta).toFixed(1)} ${unit}</span>`;
+  }
+
+  const GOAL_ICON = "\ud83c\udfaf";
+
+  function renderBodyTrend() {
+    const el = $("body-trend");
+    if (!el) return;
+    const parts = [];
+    const trend = deltaSpan(bodyCumulative("weight"), "kg")
+      + deltaSpan(bodyCumulative("body_fat"), "%");
+    if (trend) parts.push(`<span class="bd-chip bd-trend">${trend}</span>`);
+
+    const goals = bodyGoalTargets();
+    if (goals.weight === null && goals.fat === null) {
+      parts.push(`<button type="button" class="bd-chip bd-goal" data-goal-btn` +
+        ` title="${t("goalBtnTip")}">${GOAL_ICON} ${t("goalBtn")}</button>`);
+    } else {
+      [[goals.weight, "weight", t("bodyWeightName")], [goals.fat, "body_fat", t("bodyFatName")]]
+        .forEach(([target, key, name]) => {
+          if (target === null) return;
+          const p = goalProgress(key, target, name);
+          parts.push(`<button type="button" class="bd-chip bd-goal${p.done ? " done" : ""}"` +
+            ` title="${p.tip}">${GOAL_ICON} ${p.label}</button>`);
+        });
+    }
+    el.innerHTML = parts.join("");
+  }
+
+  function setGoalStatus(msg, isError) {
+    const el = $("goal-status");
+    if (!el) return;
+    el.textContent = msg || "";
+    el.className = "goal-status" + (msg ? (isError ? " error" : " ok") : "");
+  }
+
+  function bmiBoundaryWeight(bmi) {
+    const height = profileHeightCm();
+    if (!height) return null;
+    const m = height / 100;
+    return Math.round(bmi * m * m * 10) / 10;
+  }
+
+  // 快选按钮直接把边界体重写在标签上；没填身高时整组停用并说明原因。
+  function syncGoalQuickPicks() {
+    const low = bmiBoundaryWeight(18.5);
+    const high = bmiBoundaryWeight(24.0);
+    $("goal-bmi-low").textContent = t("goalBmiLow", { v: low === null ? "--" : low.toFixed(1) });
+    $("goal-bmi-high").textContent = t("goalBmiHigh", { v: high === null ? "--" : high.toFixed(1) });
+    $("goal-bmi-low").disabled = low === null;
+    $("goal-bmi-high").disabled = high === null;
+    const hint = $("goal-quick-hint");
+    hint.hidden = low !== null;
+    hint.textContent = t("goalNoHeight");
+  }
+
+  function openGoalModal() {
+    const goals = bodyGoalTargets();
+    $("goal-weight").value = goals.weight === null ? "" : String(goals.weight);
+    $("goal-fat").value = goals.fat === null ? "" : String(goals.fat);
+    syncGoalQuickPicks();
+    setGoalStatus("");
+    $("body-goal-modal").showModal();
+    $("goal-weight").focus();
+  }
+
+  function readGoalFields() {
+    const wRaw = $("goal-weight").value.trim();
+    const fRaw = $("goal-fat").value.trim();
+    return {
+      weight: wRaw === "" ? null : bodyNum(wRaw),
+      body_fat: fRaw === "" ? null : bodyNum(fRaw),
+      empty: wRaw === "" && fRaw === "",
+    };
+  }
+
+  async function saveGoals() {
+    const { weight, body_fat, empty } = readGoalFields();
+    if (empty) { setGoalStatus(t("goalNeedValue"), true); return; }
+    if (outOfBodyRange(weight, body_fat)) { setGoalStatus(t("bodyRangeErr"), true); return; }
+    if (await writeBodyGoals(weight, body_fat)) {
+      setGoalStatus(t("goalSaved"));
+      renderBodyTrend();
+      renderBodyChart(bodyFiltered());
+    }
+  }
+
+  async function clearGoals() {
+    if (await writeBodyGoals(null, null)) {
+      $("goal-weight").value = "";
+      $("goal-fat").value = "";
+      setGoalStatus(t("goalCleared"));
+      renderBodyTrend();
+      renderBodyChart(bodyFiltered());
+    }
   }
 
   function applyBodyPlaceholders() {
@@ -1751,6 +2054,7 @@
     renderBodySummary(rows);
     renderBodyList(rows);
     renderBodyBmi();
+    renderBodyTrend();
   }
 
   function seriesScale(rows, key, extra = []) {
@@ -1766,10 +2070,11 @@
 
   function renderBodyChart(rows) {
     const box = $("body-chart");
-    const target = targetWeightForChart();
-    // 把健康体重参考值并入体重纵轴范围，保证绿色参考线始终落在绘图区内。
-    const wScale = seriesScale(rows, "weight", target ? [target.weight] : []);
-    const fScale = seriesScale(rows, "body_fat");
+    const ref = weightRefLine();
+    const fatGoal = bodyGoalTargets().fat;
+    // 参考值并入各自纵轴范围，保证目标线 / 健康体重虚线始终落在绘图区内。
+    const wScale = seriesScale(rows, "weight", ref ? [ref.weight] : []);
+    const fScale = seriesScale(rows, "body_fat", fatGoal === null ? [] : [fatGoal]);
 
     if (!wScale && !fScale) {
       box.innerHTML = "";
@@ -1863,13 +2168,23 @@
       out.push(`<text class="bc-unit" x="${w - padR + 6}" y="${(padT - 4).toFixed(1)}" text-anchor="start">%</text>`);
     }
 
-    // 健康体重参考线：绿色虚线，标注对应的 BMI 与目标体重。
-    if (target && chartVisible.bmi && wScale) {
-      const ty = yOf(target.weight, wScale).toFixed(1);
+    // 体重参考线：绿色虚线，标签按来源写成「目标体重 …」或「BMI … · … kg」。
+    if (ref && chartVisible.bmi && wScale) {
+      const ty = yOf(ref.weight, wScale).toFixed(1);
       out.push(`<line class="bc-target" x1="${padL}" y1="${ty}" x2="${w - padR}" y2="${ty}" />`);
       out.push(
         `<text class="bc-target-label" x="${(w - padR - 4).toFixed(1)}" y="${(ty - 4).toFixed(1)}" text-anchor="end">` +
-        `BMI ${target.bmi.toFixed(1)} · ${target.weight.toFixed(1)} kg</text>`
+        `${ref.label}</text>`
+      );
+    }
+
+    // 体脂目标：与体脂曲线同色的虚线，标注放在左端，避免和体重参考线标签叠在一起。
+    if (fatGoal !== null && chartVisible.fat && fScale) {
+      const fy = yOf(fatGoal, fScale).toFixed(1);
+      out.push(`<line class="bc-target bc-target-fat" x1="${padL}" y1="${fy}" x2="${w - padR}" y2="${fy}" />`);
+      out.push(
+        `<text class="bc-target-label bc-target-fat" x="${(padL + 4).toFixed(1)}" y="${(fy - 4).toFixed(1)}" text-anchor="start">` +
+        `${t("goalFatName")} ${fatGoal.toFixed(1)} %</text>`
       );
     }
 
@@ -1882,7 +2197,7 @@
     let legend = `<div class="bc-legend">`;
     if (wScale) legend += legendItem("weight", "bc-weight", t("bodyWeightName"));
     if (fScale) legend += legendItem("fat", "bc-fat", t("bodyFatName"));
-    if (target) legend += legendItem("bmi", "bc-target-key", t("bmiTargetName"));
+    if (ref) legend += legendItem("bmi", "bc-target-key", ref.name);
     legend += `</div>`;
 
     box.innerHTML =
@@ -2074,6 +2389,10 @@
       if (!entry) { setStatus(t("bodyDeleteNothing"), "error"); return; }
       deleteBodyDay(currentDate);
     });
+    // 胶囊随每次渲染重建，监听同样挂在容器上：点目标胶囊打开目标对话框。
+    $("body-trend").addEventListener("click", (e) => {
+      if (e.target.closest && e.target.closest(".bd-goal")) openGoalModal();
+    });
     // 图表每次 render 都会替换 innerHTML，所以点击监听放在容器上做委托。
     // 点图例 = 切换对应曲线显隐；点线上的点 = 跳到那天的记录，
     // 录入框、BMI、历史列表全部随之联动。
@@ -2101,6 +2420,32 @@
     window.addEventListener("resize", () => {
       clearTimeout(chartResizeTimer);
       chartResizeTimer = setTimeout(redrawBodyChart, 150);
+    });
+  }
+
+  // ---------- 目标对话框 ----------
+  function setupGoalDialog() {
+    const modal = $("body-goal-modal");
+    $("goal-close").addEventListener("click", () => modal.close());
+    modal.addEventListener("click", (e) => {
+      if (e.target === e.currentTarget) modal.close();
+    });
+    $("goal-quick").addEventListener("click", (e) => {
+      const btn = e.target.closest("button");
+      if (!btn || btn.disabled) return;
+      const weight = bmiBoundaryWeight(Number(btn.dataset.bmi));
+      if (weight === null) return;
+      $("goal-weight").value = String(weight);
+      setGoalStatus("");
+    });
+    $("goal-save").addEventListener("click", saveGoals);
+    $("goal-clear").addEventListener("click", clearGoals);
+    ["goal-weight", "goal-fat"].forEach((id) => {
+      const input = $(id);
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") { e.preventDefault(); saveGoals(); }
+      });
+      input.addEventListener("focus", () => input.select());
     });
   }
 
@@ -3568,6 +3913,7 @@
     setupTimerRail();
     setupTickerAddForm();
     setupExportDialog();
+    setupGoalDialog();
     setupScroll();
     setupAccountMenu();
     setupTopBarButtons();

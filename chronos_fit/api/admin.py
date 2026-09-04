@@ -75,7 +75,7 @@ def admin_users(admin: AdminUser, session: DbSession):
                 "email": user.email,
                 "created_at": user.created_at,
                 "language": user.language or "zh",
-                "theme": user.theme or "system",
+                "theme": user.theme or "eye",
                 "is_admin": bool(user.is_admin),
                 "locked": bool(user.locked_until),
                 "failed_attempts": user.failed_attempts or 0,

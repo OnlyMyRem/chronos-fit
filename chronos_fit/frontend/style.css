@@ -37,6 +37,7 @@ body.light {
   --done: #a3a3a3;
   --danger: #ef4444;
   --success: #15803d;
+  --success-strong: #12683a;
   --success-ink: #f2fbf5;
   --accent-ink: #ffffff;
   --hang-bg: rgba(245, 245, 245, 0.86);
@@ -76,6 +77,7 @@ body.eye {
   --done:      #b7ab95;
   --danger:    #b3402f;
   --success:   #3f842e;
+  --success-strong: #2c6b1e;
   --success-ink: #f4f8ee;
   --accent-ink: #fffdf8;
   --hang-bg: rgba(244, 239, 228, 0.86);
@@ -225,17 +227,6 @@ body.scrolled .hang-clock {
 .icon-btn:hover {
   border-color: var(--accent);
   background: var(--accent-dim);
-}
-
-/* 默认主题已是夜间时，主题按钮没有可切换的目标，置灰且不吃 hover 样式。 */
-.icon-btn:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-
-.icon-btn:disabled:hover {
-  border-color: var(--border);
-  background: transparent;
 }
 
 /* For buttons with short text labels (e.g. language "EN"/"中" or the compact
@@ -1270,6 +1261,90 @@ body.light .plan-title-select {
 
 .export-status.error {
   color: var(--danger);
+}
+
+/* ---------- 目标对话框 ---------- */
+.goal-hint {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.goal-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.goal-fields .field {
+  flex: 1 1 132px;
+  min-width: 0;
+}
+
+.goal-fields input {
+  text-align: right;
+}
+
+.goal-quick .field-label {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.goal-quick-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.goal-quick-btns button {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.8rem;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.goal-quick-btns button:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* 身高没填时算不出边界体重，整组停用并说明原因。 */
+.goal-quick-btns button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.goal-quick-hint {
+  margin: 8px 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.goal-status {
+  min-height: 20px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.goal-status.ok {
+  color: var(--success-strong);
+}
+
+.goal-status.error {
+  color: var(--danger);
+}
+
+.goal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .drawer-head {
@@ -2579,18 +2654,19 @@ body.light dialog::backdrop {
   background: var(--accent-dim);
 }
 
-/* 身体数据录入行：体重 / 体脂只是两三位数字，给固定窄宽（不随卡片拉伸），
-   整行靠左成组；两列共用同一轨道宽度，所以仍然严格对齐。 */
+/* 身体数据录入行：体重 / 体脂只是两三位数字，给固定窄宽（不随卡片拉伸）。
+   整行用可换行的 flex —— 删除右侧的累计 / 目标胶囊放不下时自己掉到下一行，
+   绝不回过头去挤压折线图的宽度。 */
 .body-entry {
-  display: grid;
-  grid-template-columns: 112px 112px auto auto;
-  justify-content: start;
+  display: flex;
+  flex-wrap: wrap;
   align-items: end;
   gap: 10px;
   margin-bottom: 14px;
 }
 
 .body-entry .field {
+  flex: 0 0 112px;
   min-width: 0;
 }
 
@@ -2647,6 +2723,72 @@ body.light .body-save-btn {
 .body-delete-btn:hover {
   color: var(--danger);
   border-color: var(--danger);
+}
+
+/* 删除右侧的胶囊组：累计变化 + 目标进度，整体靠右；放不下时换到下一行仍靠右。 */
+.body-trend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px 8px;
+  margin-left: auto;
+  min-width: 0;
+}
+
+.bd-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 37px;           /* 与录入框、记录 / 删除按钮同高，整行底边齐平 */
+  padding: 0 11px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 0.78rem;
+  line-height: 1;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+button.bd-chip {
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+button.bd-chip:hover {
+  color: var(--text);
+  border-color: var(--muted);
+}
+
+/* 降 = 绿色向下箭头，升 = 红色向上箭头：方向即结论，不必再读文字。 */
+.bd-cd {
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.bd-cd.down {
+  color: var(--success-strong);
+}
+
+.bd-cd.up {
+  color: var(--danger);
+}
+
+/* 体重与体脂两个数字之间点个分隔点，避免「3.2 kg 1.4 %」糊成一串。 */
+.bd-cd + .bd-cd::before {
+  content: "·";
+  margin: 0 7px 0 2px;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.bd-goal.done {
+  color: var(--success-strong);
+  border-color: rgba(56, 145, 95, 0.5);
+  background: rgba(56, 145, 95, 0.12);
 }
 
 /* BMI 行：数值 + 带色圆点徽章。四档配色独立成类，明暗主题都保持柔和。 */
@@ -2876,6 +3018,17 @@ text.bc-fat {
 
 .bc-target-key {
   color: var(--success-strong);
+}
+
+/* 体脂目标线：与体脂曲线同色同族，压淡一档，避免抢走实线数据的注意力。 */
+.bc-target-fat {
+  stroke: var(--accent-2);
+  opacity: 0.7;
+}
+
+text.bc-target-fat {
+  fill: var(--accent-2);
+  opacity: 0.85;
 }
 
 .body-summary {
@@ -3135,15 +3288,28 @@ text.bc-fat {
   .meals-vertical {
     grid-template-columns: 1fr;
   }
-  /* 窄屏录入行同样用网格，只是把两个按钮独占一行，输入框仍保持等宽对齐。 */
+  /* 窄屏录入行：两个输入框各占一半，两个按钮并排占满一行，胶囊再另起一行。 */
   .body-entry {
-    grid-template-columns: 112px 112px;
-    justify-content: start;
+    gap: 8px;
   }
+
+  .body-entry .field {
+    flex: 1 1 calc(50% - 4px);
+  }
+
   .body-entry .body-save-btn,
   .body-entry .body-delete-btn {
-    grid-column: span 1;
+    flex: 1 1 0;
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+
+  /* 手机上没有「删除右侧」可言：胶囊组独占一行、靠左排。 */
+  .body-trend {
     width: 100%;
+    margin-left: 0;
+    justify-content: flex-start;
   }
 }
 

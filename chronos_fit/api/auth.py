@@ -246,10 +246,12 @@ def auth_me(uid: CurrentUid, session: DbSession):
             "username": user.username,
             "email": user.email,
             "language": _language(user.language),
-            "theme": user.theme or "system",
+            "theme": user.theme or "eye",
             "is_admin": bool(user.is_admin),
             "gender": user.gender,
             "height_cm": user.height_cm,
+            "target_weight": user.target_weight,
+            "target_body_fat": user.target_body_fat,
         }
     }
 

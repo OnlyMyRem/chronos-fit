@@ -121,6 +121,11 @@ class BodyPayload(BaseModel):
     body_fat: float | None = None
 
 
+class BodyTargetPayload(BaseModel):
+    weight: float | None = None
+    body_fat: float | None = None
+
+
 class PlanPayload(BaseModel):
     name: str
     items: list[str]

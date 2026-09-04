@@ -5,12 +5,12 @@ from __future__ import annotations
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Query
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 
 from .. import db
-from ..models import BodyLog
+from ..models import BodyLog, User
 from ..services.time_utils import cutoff_date, now_iso
-from .deps import BodyPayload, CurrentUid, DbSession
+from .deps import BodyPayload, BodyTargetPayload, CurrentUid, DbSession
 
 router = APIRouter(prefix="/api/body", tags=["body"])
 
@@ -76,3 +76,19 @@ def body_delete(session: DbSession, uid: CurrentUid, log_date: str = Query(...))
         delete(BodyLog).where(BodyLog.user_id == uid, BodyLog.log_date == normalized)
     )
     return {"ok": True, "log_date": normalized}
+
+
+@router.post("/target")
+def body_target(payload: BodyTargetPayload, session: DbSession, uid: CurrentUid):
+    """目标体重 / 目标体脂：随账号保存，传 null 表示清除该项。"""
+    if not uid:
+        raise HTTPException(401, "请先登录")
+    weight = _check_range(payload.weight, WEIGHT_RANGE, "目标体重(kg)")
+    body_fat = _check_range(payload.body_fat, BODY_FAT_RANGE, "目标体脂(%)")
+    session.execute(
+        update(User).where(User.id == uid).values(
+            target_weight=weight,
+            target_body_fat=body_fat,
+        )
+    )
+    return {"ok": True, "weight": weight, "body_fat": body_fat}

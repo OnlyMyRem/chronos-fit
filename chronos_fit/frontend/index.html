@@ -43,9 +43,8 @@
         </div>
       </div>
 
-      <!-- 主题：独立按钮，图标表示「点下去会切到」的模式 -->
-      <button id="theme-btn" class="icon-btn" type="button"
-              aria-pressed="false" data-i18n-title="themeTip" title="切换为浅色主题">🌙</button>
+      <!-- 主题：独立按钮，图标就是当前主题，点一下按 护眼 → 浅色 → 深色 → 跟随系统 循环 -->
+      <button id="theme-btn" class="icon-btn" type="button" title="当前主题：护眼 · 点击切到浅色">🍂</button>
 
       <!-- 语言：独立按钮，文字表示「点下去会切到」的语言 -->
       <button id="lang-btn" class="icon-btn text-icon-btn lang-btn" type="button"
@@ -165,6 +164,8 @@
           </label>
           <button type="button" id="body-save" class="primary body-save-btn" data-i18n="bodySave">记录</button>
           <button type="button" id="body-delete" class="body-delete-btn" data-i18n="bodyDelete" data-i18n-title="bodyDeleteTip" title="删除当前日期的记录">删除</button>
+          <!-- 删除右侧：累计变化 + 目标进度，由 app.js 按当前查看日期渲染 -->
+          <div class="body-trend" id="body-trend"></div>
         </div>
 
         <div class="body-bmi" id="body-bmi"></div>
@@ -465,6 +466,39 @@
       <button type="button" id="settings-save-pwd" class="auth-btn" data-i18n="savePassword">保存新密码</button>
     </form>
     <p class="settings-status" id="settings-status"></p>
+  </div>
+</dialog>
+
+<dialog id="body-goal-modal" class="panel-dialog">
+  <div class="drawer-head">
+    <h2 data-i18n="goalTitle">目标体重与体脂</h2>
+    <button type="button" class="drawer-close" id="goal-close">✕</button>
+  </div>
+  <div class="drawer-body">
+    <p class="goal-hint" data-i18n="goalHint">留空表示不设该项，两项都留空即清除目标。</p>
+    <div class="goal-fields">
+      <label class="field">
+        <span class="field-label" data-i18n="goalWeight">目标体重 (kg)</span>
+        <input type="number" id="goal-weight" step="0.1" min="20" max="400" autocomplete="off" placeholder="65.0" />
+      </label>
+      <label class="field">
+        <span class="field-label" data-i18n="goalFat">目标体脂 (%)</span>
+        <input type="number" id="goal-fat" step="0.1" min="1" max="70" autocomplete="off" placeholder="18.0" />
+      </label>
+    </div>
+    <div class="goal-quick">
+      <span class="field-label" data-i18n="goalBmiQuick">按 BMI 边界快选</span>
+      <div class="goal-quick-btns" id="goal-quick">
+        <button type="button" data-bmi="18.5" id="goal-bmi-low"></button>
+        <button type="button" data-bmi="24.0" id="goal-bmi-high"></button>
+      </div>
+      <p class="goal-quick-hint" id="goal-quick-hint" hidden></p>
+    </div>
+    <p class="goal-status" id="goal-status"></p>
+    <div class="goal-actions">
+      <button type="button" id="goal-clear" class="body-delete-btn" data-i18n="goalClear">清除目标</button>
+      <button type="button" id="goal-save" class="primary body-save-btn" data-i18n="goalSave">保存目标</button>
+    </div>
   </div>
 </dialog>
 
