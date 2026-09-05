@@ -1880,29 +1880,19 @@
     return { delta: last.value - first.value, from: first.date, to: last.date };
   }
 
-  function isoShift(iso, offsetDays) {
-    const [y, m, d] = iso.split("-").map(Number);
-    return toISO(dateWithOffset({ year: y, month: m, day: d }, offsetDays));
-  }
-
   function isoDiffDays(from, to) {
     return Math.round((timeMs(to) - timeMs(from)) / 86400000);
   }
 
-  /* 一周的速度：最近一条记录 与 它往前 7 天那次沿用值 之间的斜率。
-     一周只录一次时前者会退回更早的记录，于是 days 变大、速度被摊平，
-     提示文案里的「近 N 天」如实说明算的是哪段。 */
+  /* 周速度：直接复用「区间变化」的首末两条记录，和左侧 ▼/▲ 数字完全同源——
+     选 1 周就是这 7 个记录日的平均速度，选 30 天就是这 30 个记录日的。
+     窗口内不足两天算不出速度，返回 null。 */
   function bodyPacePerWeek(key) {
-    const pts = bodyHistory.filter((r) => r.log_date <= currentDate && bodyNum(r[key]) !== null);
-    if (pts.length < 2) return null;
-    const last = pts[pts.length - 1];
-    const base = [...pts].reverse().find((r) => r.log_date <= isoShift(last.log_date, -7)) || pts[0];
-    const days = isoDiffDays(base.log_date, last.log_date);
-    if (base === last || days < 1) return null;
-    return {
-      perWeek: ((bodyNum(last[key]) - bodyNum(base[key])) / days) * 7,
-      days,
-    };
+    const c = bodyCumulative(key);
+    if (!c) return null;
+    const days = isoDiffDays(c.from, c.to);
+    if (days < 1) return null;
+    return { perWeek: (c.delta / days) * 7, days };
   }
 
   /* 用「还差多少」除以「一周的变化量」得到周数，再按量级换成天 / 周 / 月。
@@ -1928,7 +1918,8 @@
     }
     parts.push(`${t("bodyLatest")} ${current.toFixed(1)}${unit}`);
     const need = current - target;
-    if (Math.abs(need) < 0.05) {
+    // 已到或已越过目标线（need ≤ 0）都算达成——别再把「减过头」误判成停滞。
+    if (need <= 0.05) {
       return { label: `${name} ${t("goalReached")}`, tip: parts.join(" · "), done: true };
     }
     const pace = bodyPacePerWeek(key);
