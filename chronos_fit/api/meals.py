@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import delete, desc, func, select
 
 from .. import db
-from ..models import MEAL_KEYS, MealItem
+from ..models import MEAL_KEYS, MealDismissal, MealItem
 from ..services.time_utils import now_iso
 from .deps import CurrentUid, DbSession, MealItemPayload, MealTogglePayload
 
@@ -15,10 +15,18 @@ router = APIRouter(prefix="/api/meals", tags=["meals"])
 
 @router.get("/recent")
 def meals_recent(session: DbSession, uid: CurrentUid, limit: int = Query(default=3)):
-    """The items this user logs most often, per meal: the columns' default rows."""
+    """The items this user logs most often, per meal: the columns' default rows.
+    被 ✕ 屏蔽过的名字不再出现；屏蔽在重新录入该条目时自动解除。"""
     limit = max(1, min(limit, 10))
     out: dict[str, list[str]] = {}
     for meal in MEAL_KEYS:
+        dismissed = set(
+            session.scalars(
+                select(MealDismissal.item_name).where(
+                    MealDismissal.user_id == uid, MealDismissal.meal == meal
+                )
+            )
+        )
         rows = session.execute(
             select(
                 MealItem.item_name,
@@ -28,9 +36,8 @@ def meals_recent(session: DbSession, uid: CurrentUid, limit: int = Query(default
             .where(MealItem.user_id == uid, MealItem.meal == meal)
             .group_by(MealItem.item_name)
             .order_by(desc("uses"), desc("last_id"))
-            .limit(limit)
         ).all()
-        out[meal] = [r.item_name for r in rows]
+        out[meal] = [r.item_name for r in rows if r.item_name not in dismissed][:limit]
     return out
 
 
@@ -63,6 +70,14 @@ def meals_add(payload: MealItemPayload, session: DbSession, uid: CurrentUid):
         },
         insert={"created_at": now_iso()},
         update={},
+    )
+    # 重新录入 = 想要它回到推荐里，屏蔽自动解除。
+    session.execute(
+        delete(MealDismissal).where(
+            MealDismissal.user_id == uid,
+            MealDismissal.meal == payload.meal,
+            MealDismissal.item_name == item_name,
+        )
     )
     return {"ok": True, "log_date": payload.log_date, "meal": payload.meal,
             "item_name": item_name}
@@ -104,19 +119,19 @@ def meals_delete(
 
 
 @router.delete("/suggestion")
-def meals_delete_suggestion(
+def meals_dismiss_suggestion(
     session: DbSession,
     uid: CurrentUid,
     meal: str = Query(...),
     item_name: str = Query(...),
 ):
-    """推荐条目的删除：该条目来自全部历史聚合，只删当天压不住它，
-    直接把该用户此餐的这条名字从所有日期里删掉，推荐不再复发。"""
-    session.execute(
-        delete(MealItem).where(
-            MealItem.user_id == uid,
-            MealItem.meal == meal,
-            MealItem.item_name == item_name,
-        )
+    """推荐条目的 ✕：只是「不再推荐这个名字」，历史打卡记录一个字都不动。
+    想找回就在输入行重新录入该条目，屏蔽随之解除。"""
+    db.upsert(
+        session,
+        MealDismissal,
+        key={"user_id": uid, "meal": meal, "item_name": item_name},
+        insert={"created_at": now_iso()},
+        update={},
     )
     return {"ok": True, "meal": meal, "item_name": item_name}

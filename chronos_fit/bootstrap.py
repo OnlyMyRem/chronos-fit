@@ -15,6 +15,7 @@ from . import db
 from .config import DATA_DIR, Config
 from .models import Base, User
 from .seeds import seed_defaults
+from .services.time_utils import now_iso
 
 EMAIL_INDEX = "idx_users_email"
 LEGACY_DB = DATA_DIR.parent / "workout.db"
@@ -138,8 +139,31 @@ def _adopt_legacy_database(cfg: Config) -> None:
     )
 
 
+BACKUP_KEEP = 7
+
+
+def _rolling_sqlite_backup(cfg: Config) -> None:
+    """每次启动给 SQLite 库做一份当日备份，保留最近 7 份（data/backups/）。
+    这是最后一道兜底：任何误删或 bug 丢的数据，都能回滚到前一天的状态。
+    服务常驻不重启就不会产生新备份，MySQL 用户请自行定时备份。"""
+    if cfg.database.dialect != "sqlite":
+        return
+    src = db.sqlite_file(db.normalize_sqlite_url(cfg.database.url))
+    if src is None or not src.is_file():
+        return
+    backups = src.parent / "backups"
+    backups.mkdir(parents=True, exist_ok=True)
+    target = backups / f"{src.stem}-{now_iso()[:10]}.db"
+    if not target.exists():
+        shutil.copy2(src, target)
+    history = sorted(backups.glob(f"{src.stem}-*.db"))
+    for stale in history[:-BACKUP_KEEP]:
+        stale.unlink(missing_ok=True)
+
+
 def bootstrap(cfg: Config) -> Engine:
     _adopt_legacy_database(cfg)
+    _rolling_sqlite_backup(cfg)
     engine = db.configure(cfg)
     Base.metadata.create_all(engine, checkfirst=True)
     with db.session_scope() as session:

@@ -172,7 +172,10 @@
       goalNoRecord: "尚无记录",
       goalPaceTip: "近 {d} 天速度 {p}/周",
       goalNoPaceTip: "记录太少，暂无法按周速度估算",
-      mealSuggestTip: "根据你以往的记录推荐", dismissSuggestion: "删除该推荐（含历史记录）",
+      mealSuggestTip: "根据你以往的记录推荐", dismissSuggestion: "不再显示该推荐（历史记录保留，重新录入即恢复）",
+      confirmDeleteMeal: "删除「{x}」今天这条记录？",
+      confirmDeleteBody: "删除 {d} 的体重 / 体脂记录？",
+      confirmDisableCycle: "停用排程周期？不会影响任何打卡与身体数据，星期绑定将恢复。",
       // export dialog
       exportTitle: "导出历史数据",
       exportHint: "选择时间范围，导出锻炼、三餐与身体数据。JSON 便于分析，CSV 可用 Excel 打开。",
@@ -359,7 +362,10 @@
       goalNoRecord: "No records yet",
       goalPaceTip: "Last {d} days: {p} per week",
       goalNoPaceTip: "Too few records to estimate a weekly pace",
-      mealSuggestTip: "Suggested from your history", dismissSuggestion: "Delete this suggestion (incl. history)",
+      mealSuggestTip: "Suggested from your history", dismissSuggestion: "Hide this suggestion (history kept; log it again to restore)",
+      confirmDeleteMeal: 'Delete "{x}" from today\'s log?',
+      confirmDeleteBody: "Delete the weight / body-fat entry for {d}?",
+      confirmDisableCycle: "Disable the schedule cycle? No check-ins or body data are affected; the weekday binding comes back.",
       exportTitle: "Export history",
       exportHint: "Pick a date range to export workouts, meals and body stats. JSON analyses well, CSV opens in Excel.",
       exportStart: "From", exportEnd: "To",
@@ -1485,9 +1491,27 @@
   }
 
   const GUEST_SUGGEST_DAYS = 14;
+  const MEAL_DISMISS_LS_KEY = "chronosfit_meal_dismissed";
+
+  function mealDismissedRead() {
+    try { return new Set(JSON.parse(localStorage.getItem(MEAL_DISMISS_LS_KEY) || "[]")); }
+    catch { return new Set(); }
+  }
+
+  function mealDismissedWrite(set) {
+    localStorage.setItem(MEAL_DISMISS_LS_KEY, JSON.stringify([...set]));
+  }
+
+  // 游客版的「重新录入即解除屏蔽」；登录用户由服务端 /add 自动处理。
+  function mealUndismiss(meal, name) {
+    if (isLoggedIn) return;
+    const set = mealDismissedRead();
+    if (set.delete(`${meal}/${name}`)) mealDismissedWrite(set);
+  }
 
   /** Same ranking as /api/meals/recent, over the guest's own localStorage history. */
   function guestMealSuggestions() {
+    const dismissed = mealDismissedRead();
     const uses = new Map();
     const seenOrder = { breakfast: [], lunch: [], dinner: [] };
     const today = bjParts();
@@ -1507,6 +1531,7 @@
     const out = {};
     Object.entries(seenOrder).forEach(([meal, order]) => {
       out[meal] = order
+        .filter((name) => !dismissed.has(`${meal}/${name}`))
         .sort((a, b) => uses.get(`${meal}/${b}`) - uses.get(`${meal}/${a}`))
         .slice(0, 3);
     });
@@ -1550,24 +1575,28 @@
       if (found) found.is_completed = 1;
       else items.push({ meal, item_name: name, is_completed: 1 });
       lsSet("meals", items);
+      mealUndismiss(meal, name);
     }
     return true;
   }
 
-  /* 推荐条目的删除：推荐由全部历史聚合而来，只在内存里屏蔽的话刷新就会复发，
-     所以 ✕ 直接把该用户此餐的这条名字从数据库（游客为 localStorage）所有日期里删掉。 */
-  async function deleteMealSuggestion(meal, name) {
+  /* 推荐条目的 ✕：只屏蔽这个名字的推荐展示，历史打卡记录一个字都不动。
+     屏蔽是持久化的（登录存 meal_dismissals 表，游客存 localStorage），
+     重新录入该条目时自动解除。 */
+  async function dismissMealSuggestion(meal, name) {
     if (isLoggedIn) {
       await fetch(
         `/api/meals/suggestion?meal=${encodeURIComponent(meal)}&item_name=${encodeURIComponent(name)}`,
         { method: "DELETE" }
       );
     } else {
-      lsSet("meals", lsGet("meals").filter((i) => !(i.meal === meal && i.item_name === name)));
+      const set = mealDismissedRead();
+      set.add(`${meal}/${name}`);
+      mealDismissedWrite(set);
     }
   }
 
-  // 推荐条目改名：新名字作为当天未完成条目落库，旧名字连同历史一起删掉。
+  // 推荐条目改名：新名字作为当天未完成条目落库，旧名字只是不再推荐。
   async function renameMealSuggestion(meal, oldName, li) {
     const inp = li.querySelector(".ctext");
     const name = inp.value.trim();
@@ -1580,11 +1609,12 @@
         method: "POST", headers,
         body: JSON.stringify({ log_date: currentDate, meal, item_name: name }),
       });
-      await deleteMealSuggestion(meal, oldName);
+      await dismissMealSuggestion(meal, oldName);
     } else {
       const items = lsGet("meals");
       items.push({ meal, item_name: name, is_completed: 0 });
-      lsSet("meals", items.filter((i) => !(i.meal === meal && i.item_name === oldName)));
+      lsSet("meals", items);
+      await dismissMealSuggestion(meal, oldName);
     }
     loadMeals();
   }
@@ -1627,7 +1657,7 @@
     inp.addEventListener("change", () => renameMealSuggestion(meal, name, li));
 
     rm.addEventListener("click", async () => {
-      await deleteMealSuggestion(meal, name);
+      await dismissMealSuggestion(meal, name);
       loadMeals();
     });
 
@@ -1689,6 +1719,7 @@
     inp.addEventListener("change", () => renameMealItem(meal, name, li));
 
     del.addEventListener("click", async () => {
+      if (!confirm(t("confirmDeleteMeal", { x: name }))) return;
       if (isLoggedIn) {
         await fetch(
           `/api/meals?log_date=${encodeURIComponent(currentDate)}&meal=${encodeURIComponent(meal)}&item_name=${encodeURIComponent(name)}`,
@@ -1772,6 +1803,7 @@
             items.push({ meal, item_name: name, is_completed: 0 });
             lsSet("meals", items);
           }
+          mealUndismiss(meal, name);
         }
         loadMeals();
       } else if (e.key === "Escape") {
@@ -2487,6 +2519,7 @@
   }
 
   async function deleteBodyDay(iso) {
+    if (!confirm(t("confirmDeleteBody", { d: iso }))) return;
     if (isLoggedIn) {
       await fetch(`/api/body?log_date=${encodeURIComponent(iso)}`, { method: "DELETE" });
     } else {
@@ -3747,6 +3780,7 @@
   }
 
   async function disableCycle() {
+    if (!confirm(t("confirmDisableCycle"))) return;
     await fetch("/api/plans/cycle", { method: "DELETE" });
     $("cycle-modal").close();
     cycle = null;

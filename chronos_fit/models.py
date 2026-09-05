@@ -165,6 +165,22 @@ class WorkoutCycle(Base):
     updated_at: Mapped[str] = mapped_column(String(32), nullable=False)
 
 
+class MealDismissal(Base):
+    """推荐条目的「不再显示」：只屏蔽推荐展示，历史打卡记录原封不动。
+    再次录入同名条目时自动解除屏蔽。"""
+
+    __tablename__ = "meal_dismissals"
+    __table_args__ = (
+        UniqueConstraint("user_id", "meal", "item_name", name="uq_meal_dismissals_key"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(Integer, nullable=False, default=ANONYMOUS_UID)
+    meal: Mapped[str] = mapped_column(String(20), nullable=False)
+    item_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    created_at: Mapped[str] = mapped_column(String(32), nullable=False)
+
+
 class TickerItem(Base):
     __tablename__ = "ticker_items"
 
