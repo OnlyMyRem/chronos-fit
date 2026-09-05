@@ -1,3 +1,3 @@
 """ChronosFit — self-hosted Beijing-time dashboard."""
 
-__version__ = "3.4.5"
+__version__ = "3.4.6"

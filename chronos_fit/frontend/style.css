@@ -3209,18 +3209,12 @@ text.bc-target-fat {
   padding: 8px 4px;
 }
 
-.meal-suggest .suggest-text {
-  flex: 1;
-  min-width: 0;
-  padding-left: 4px;
-  font-size: 0.88rem;
+.meal-suggest .ctext {
   color: var(--muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.meal-suggest:hover .suggest-text {
+.meal-suggest:hover .ctext,
+.meal-suggest .ctext:focus {
   color: var(--text);
 }
 

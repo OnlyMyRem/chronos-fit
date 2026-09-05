@@ -101,3 +101,22 @@ def meals_delete(
         )
     )
     return {"ok": True, "log_date": log_date, "meal": meal, "item_name": item_name}
+
+
+@router.delete("/suggestion")
+def meals_delete_suggestion(
+    session: DbSession,
+    uid: CurrentUid,
+    meal: str = Query(...),
+    item_name: str = Query(...),
+):
+    """推荐条目的删除：该条目来自全部历史聚合，只删当天压不住它，
+    直接把该用户此餐的这条名字从所有日期里删掉，推荐不再复发。"""
+    session.execute(
+        delete(MealItem).where(
+            MealItem.user_id == uid,
+            MealItem.meal == meal,
+            MealItem.item_name == item_name,
+        )
+    )
+    return {"ok": True, "meal": meal, "item_name": item_name}

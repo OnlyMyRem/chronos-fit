@@ -161,7 +161,7 @@
       goalNoRecord: "尚无记录",
       goalPaceTip: "近 {d} 天速度 {p}/周",
       goalNoPaceTip: "记录太少，暂无法按周速度估算",
-      mealSuggestTip: "根据你以往的记录推荐", dismissSuggestion: "不再显示该推荐",
+      mealSuggestTip: "根据你以往的记录推荐", dismissSuggestion: "删除该推荐（含历史记录）",
       // export dialog
       exportTitle: "导出历史数据",
       exportHint: "选择时间范围，导出锻炼、三餐与身体数据。JSON 便于分析，CSV 可用 Excel 打开。",
@@ -337,7 +337,7 @@
       goalNoRecord: "No records yet",
       goalPaceTip: "Last {d} days: {p} per week",
       goalNoPaceTip: "Too few records to estimate a weekly pace",
-      mealSuggestTip: "Suggested from your history", dismissSuggestion: "Hide this suggestion",
+      mealSuggestTip: "Suggested from your history", dismissSuggestion: "Delete this suggestion (incl. history)",
       exportTitle: "Export history",
       exportHint: "Pick a date range to export workouts, meals and body stats. JSON analyses well, CSV opens in Excel.",
       exportStart: "From", exportEnd: "To",
@@ -564,7 +564,6 @@
   let lastMealLogs = [];
   let defaultPlans = {};
   let mealSuggestions = {};
-  let dismissedSuggestions = new Set();
 
   // ---------- Beijing time helpers ----------
   function bjParts(date = new Date()) {
@@ -1445,9 +1444,7 @@
   }
 
   function suggestionsFor(meal, logged) {
-    return (mealSuggestions[meal] || []).filter(
-      (name) => !logged.has(name) && !dismissedSuggestions.has(`${meal}/${name}`)
-    );
+    return (mealSuggestions[meal] || []).filter((name) => !logged.has(name));
   }
 
   async function checkMealSuggestion(meal, name) {
@@ -1472,6 +1469,41 @@
     return true;
   }
 
+  /* 推荐条目的删除：推荐由全部历史聚合而来，只在内存里屏蔽的话刷新就会复发，
+     所以 ✕ 直接把该用户此餐的这条名字从数据库（游客为 localStorage）所有日期里删掉。 */
+  async function deleteMealSuggestion(meal, name) {
+    if (isLoggedIn) {
+      await fetch(
+        `/api/meals/suggestion?meal=${encodeURIComponent(meal)}&item_name=${encodeURIComponent(name)}`,
+        { method: "DELETE" }
+      );
+    } else {
+      lsSet("meals", lsGet("meals").filter((i) => !(i.meal === meal && i.item_name === name)));
+    }
+  }
+
+  // 推荐条目改名：新名字作为当天未完成条目落库，旧名字连同历史一起删掉。
+  async function renameMealSuggestion(meal, oldName, li) {
+    const inp = li.querySelector(".ctext");
+    const name = inp.value.trim();
+    if (!name) { inp.value = oldName; return; }
+    if (name === oldName) return;
+    if (currentDateIsFuture()) { inp.value = oldName; setStatus(t("futureBlocked"), "error"); return; }
+    if (isLoggedIn) {
+      const headers = { "Content-Type": "application/json" };
+      await fetch("/api/meals/add", {
+        method: "POST", headers,
+        body: JSON.stringify({ log_date: currentDate, meal, item_name: name }),
+      });
+      await deleteMealSuggestion(meal, oldName);
+    } else {
+      const items = lsGet("meals");
+      items.push({ meal, item_name: name, is_completed: 0 });
+      lsSet("meals", items.filter((i) => !(i.meal === meal && i.item_name === oldName)));
+    }
+    loadMeals();
+  }
+
   function makeMealSuggestLi(meal, name) {
     const li = document.createElement("li");
     li.className = "item meal-suggest";
@@ -1480,9 +1512,11 @@
     const cb = document.createElement("input");
     cb.type = "checkbox";
 
-    const label = document.createElement("span");
-    label.className = "suggest-text";
-    label.textContent = name;
+    const inp = document.createElement("input");
+    inp.type = "text";
+    inp.className = "ctext";
+    inp.value = name;
+    inp.maxLength = 120;
 
     const rm = document.createElement("button");
     rm.type = "button";
@@ -1490,7 +1524,7 @@
     rm.textContent = "\u2715";
     rm.setAttribute("aria-label", t("dismissSuggestion"));
 
-    li.append(cb, label, rm);
+    li.append(cb, inp, rm);
 
     cb.addEventListener("change", async () => {
       if (currentDateIsFuture()) { cb.checked = !cb.checked; setStatus(t("futureBlocked"), "error"); return; }
@@ -1502,9 +1536,14 @@
       loadMeals();
     });
 
-    rm.addEventListener("click", () => {
-      dismissedSuggestions.add(`${meal}/${name}`);
-      li.remove();
+    inp.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); inp.blur(); }
+    });
+    inp.addEventListener("change", () => renameMealSuggestion(meal, name, li));
+
+    rm.addEventListener("click", async () => {
+      await deleteMealSuggestion(meal, name);
+      loadMeals();
     });
 
     return li;
