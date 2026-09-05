@@ -839,8 +839,9 @@ select:focus {
   background: var(--accent-dim);
 }
 
-/* 编辑计划：文字按钮，宽度自适应、不收缩，避免文字溢出边框。 */
-#plan-edit-btn {
+/* 编辑计划 / 排程：同款文字按钮，宽度自适应、不收缩，避免文字溢出边框。 */
+#plan-edit-btn,
+#cycle-btn {
   flex: none;
   background: var(--panel-2);
   border: 1px solid var(--border);
@@ -855,7 +856,8 @@ select:focus {
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 
-#plan-edit-btn:hover {
+#plan-edit-btn:hover,
+#cycle-btn:hover {
   border-color: var(--accent);
   background: var(--accent-dim);
 }
@@ -1119,6 +1121,134 @@ body.light .plan-title-select {
   border-radius: 10px;
   padding: 9px 12px;
   margin-bottom: 10px;
+}
+
+/* ---------- 休息日卡片：与 future-notice 同形但走平和的灰调，
+   语义是「今天被计划安排休息」，而不是警告 ---------- */
+.rest-notice {
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+
+.rest-notice .rest-head {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.rest-notice .rest-hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* 月历里的休息日：虚线环 + 弱化数字，和已打卡的实心绿形成对照 */
+.cal-day.rest-day {
+  color: var(--muted);
+}
+
+.cal-day.rest-day::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+.cal-swatch.rest {
+  border: 1px dashed var(--muted);
+}
+
+/* ---------- 训练排程弹窗 ---------- */
+.cycle-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.cycle-row {
+  display: flex;
+  gap: 10px;
+}
+
+.cycle-row .field {
+  flex: 1;
+  min-width: 0;
+}
+
+.cycle-plans {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.cycle-plan {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.88rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cycle-empty {
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+
+.cycle-note {
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 12px 0 4px;
+}
+
+/* ---------- 密码框小眼睛：包一层定位容器，按钮绝对定位在右缘 ---------- */
+.pwd-wrap {
+  position: relative;
+  display: block;
+}
+
+.pwd-wrap input {
+  width: 100%;
+  padding-right: 38px;
+}
+
+.pwd-eye {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.pwd-eye:hover,
+.pwd-eye.shown {
+  color: var(--accent);
+}
+
+.pwd-eye svg {
+  width: 17px;
+  height: 17px;
 }
 
 .workout-card.locked .item input[type="checkbox"] {
@@ -3368,7 +3498,8 @@ text.bc-target-fat {
   }
 
   /* 窄屏下按钮收紧内边距，但保留文字，避免再次溢出边框。 */
-  #plan-edit-btn {
+  #plan-edit-btn,
+  #cycle-btn {
     padding: 8px 10px;
     font-size: 0.8rem;
   }

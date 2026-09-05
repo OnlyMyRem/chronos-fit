@@ -132,6 +132,13 @@ class PlanPayload(BaseModel):
     weekday: str | None = None
 
 
+class CyclePayload(BaseModel):
+    train_days: int
+    rest_days: int
+    plan_names: list[str]
+    anchor_date: str | None = None
+
+
 class TickerPayload(BaseModel):
     label: str
     target_value: float = 0

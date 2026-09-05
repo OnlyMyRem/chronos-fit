@@ -100,7 +100,7 @@
           <div class="card-head card-head-plan">
             <div class="plan-title-row">
               <select id="plan-select" class="plan-title-select" aria-label="plan"></select>
-              <button id="plan-edit-btn" type="button" data-i18n="editPlan" title="添加或修改计划">✏ 编辑计划</button>
+              <button id="cycle-btn" type="button" data-i18n="cycleBtn" data-i18n-title="cycleBtnTip" title="设置练 N 休 M 的滚动周期">🧘 排程</button>
             </div>
             <span class="progress" id="progress">0/0</span>
           </div>
@@ -108,6 +108,10 @@
             <div class="progress-bar" id="progress-bar"></div>
           </div>
           <div id="future-notice" class="future-notice" style="display:none" data-i18n="futureNotice"></div>
+          <div id="rest-notice" class="rest-notice" style="display:none">
+            <div class="rest-head">&#128564; <span data-i18n="restDay">休息日</span></div>
+            <div class="rest-hint" data-i18n="restHint">恢复也是训练的一部分：拉伸、睡眠、补水、散步。想加练就在上方选一份计划。</div>
+          </div>
           <ul class="items" id="items"></ul>
         </section>
       </div>
@@ -219,6 +223,7 @@
     <div class="cal-legend">
       <span><i class="cal-swatch done"></i><em data-i18n="legendDone">已打卡</em></span>
       <span><i class="cal-swatch today"></i><em data-i18n="legendToday">今天</em></span>
+      <span><i class="cal-swatch rest"></i><em data-i18n="legendRest">休息日</em></span>
     </div>
     <div class="cal-streak" id="cal-streak" hidden>
       <span><b id="streak-current">0</b><em data-i18n="streakLabel">连续天数</em></span>
@@ -316,6 +321,50 @@
         <!-- 另存为：原计划保留，把当前编辑内容存成一份新计划 -->
         <button type="button" id="plan-save-as" class="secondary" data-i18n="saveAsNew">另存为新计划</button>
         <button type="button" id="plan-save" class="primary" data-i18n="saveChanges">保存</button>
+      </span>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="cycle-modal">
+  <form method="dialog" class="plan-form" onsubmit="return false">
+    <div class="modal-head">
+      <h2 data-i18n="cycleTitle">训练排程</h2>
+      <div class="modal-head-actions">
+        <button type="button" id="plan-edit-btn" class="link-btn" data-i18n="editPlan" data-i18n-title="editPlanTip" title="添加或修改计划">✏ 编辑计划</button>
+        <button type="button" id="cycle-close" class="modal-close" aria-label="关闭">✕</button>
+      </div>
+    </div>
+    <div class="cycle-presets">
+      <button type="button" class="row-btn cycle-preset" data-train="1" data-rest="1" data-i18n="cyclePreset11">练一休一</button>
+      <button type="button" class="row-btn cycle-preset" data-train="2" data-rest="1" data-i18n="cyclePreset21">练二休一</button>
+      <button type="button" class="row-btn cycle-preset" data-train="3" data-rest="1" data-i18n="cyclePreset31">练三休一</button>
+      <button type="button" class="row-btn cycle-preset" data-train="4" data-rest="1" data-i18n="cyclePreset41">练四休一</button>
+    </div>
+    <div class="cycle-row">
+      <label class="field">
+        <span class="field-label" data-i18n="cycleTrain">连续训练天数</span>
+        <input type="number" id="cycle-train" min="1" max="7" value="1" />
+      </label>
+      <label class="field">
+        <span class="field-label" data-i18n="cycleRest">休息天数</span>
+        <input type="number" id="cycle-rest" min="0" max="6" value="1" />
+      </label>
+      <label class="field">
+        <span class="field-label" data-i18n="cycleAnchor">起始日</span>
+        <input type="date" id="cycle-anchor" />
+      </label>
+    </div>
+    <div class="field">
+      <span class="field-label" data-i18n="cyclePlans">参与轮换的计划（按勾选顺序轮转）</span>
+      <div id="cycle-plans" class="cycle-plans"></div>
+    </div>
+    <div class="cycle-note" data-i18n="cycleNote">启用后按周期滚动：训练日在所选计划间轮转，休息日显示恢复提示；星期绑定暂被周期取代，停用后自动恢复。连续打卡统计自动跳过休息日（休息不断签）。</div>
+    <div class="modal-actions">
+      <button type="button" id="cycle-disable" class="danger ghost-danger" data-i18n="cycleDisable">停用周期</button>
+      <span class="modal-actions-right">
+        <button type="button" id="cycle-cancel" data-i18n="cancel">取消</button>
+        <button type="button" id="cycle-save" class="primary" data-i18n="save">保存</button>
       </span>
     </div>
   </form>

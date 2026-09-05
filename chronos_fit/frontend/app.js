@@ -44,6 +44,16 @@
       planModalTitle: "计划编辑器", selectPlan: "选择计划（编辑已有）",
       planName: "计划名称", planNamePh: "输入计划名称",
       newBlankPlan: "＋ 新建空白计划", newBlankHint: "正在新建一份空白计划，点「保存」后才会创建。",
+      cycleBtn: "🧘 排程", cycleBtnTip: "设置练 N 休 M 的滚动周期", editPlanTip: "添加或修改计划",
+      pwdShow: "显示密码", pwdHide: "隐藏密码",
+      cycleTitle: "训练排程", cyclePreset11: "练一休一", cyclePreset21: "练二休一", cyclePreset31: "练三休一", cyclePreset41: "练四休一",
+      cycleTrain: "连续训练天数", cycleRest: "休息天数", cycleAnchor: "起始日",
+      cyclePlans: "参与轮换的计划（按勾选顺序轮转）", cyclePlansEmpty: "暂无计划，先去编辑计划创建。",
+      cycleNote: "启用后按周期滚动：训练日在所选计划间轮转，休息日显示恢复提示；星期绑定暂被周期取代，停用后自动恢复。连续打卡统计自动跳过休息日（休息不断签）。",
+      cycleDisable: "停用周期", cycleErrRange: "训练天数需在 1-7，休息天数需在 0-6",
+      cycleNeedPlans: "至少勾选一个参与轮换的计划", cycleSaved: "已保存排程周期",
+      cycleDisabled: "已停用周期，恢复星期绑定", restDay: "休息日",
+      restHint: "恢复也是训练的一部分：拉伸、睡眠、补水、散步。想加练就在上方选一份计划。",
       pickPlanPlaceholder: "— 选择要编辑的计划 —",
       saveAsSuffix: " 副本",
       bindWeekday: "绑定星期（每周自动切换到该计划）", none: "不绑定",
@@ -71,6 +81,7 @@
       today: "今天",
       legendDone: "已打卡",
       legendToday: "今天",
+      legendRest: "休息日",
       streakLabel: "连续天数",
       totalLabel: "累计打卡",
       // countdown rail
@@ -226,6 +237,16 @@
       planModalTitle: "Plan editor", selectPlan: "Select plan (to edit)",
       planName: "Plan name", planNamePh: "Enter plan name",
       newBlankPlan: "+ New blank plan", newBlankHint: "Creating a blank plan. It is saved only when you press Save.",
+      cycleBtn: "🧘 Cycle", cycleBtnTip: "Set a rolling train N / rest M schedule", editPlanTip: "Add or edit plans",
+      pwdShow: "Show password", pwdHide: "Hide password",
+      cycleTitle: "Training schedule", cyclePreset11: "1 on · 1 off", cyclePreset21: "2 on · 1 off", cyclePreset31: "3 on · 1 off", cyclePreset41: "4 on · 1 off",
+      cycleTrain: "Training days", cycleRest: "Rest days", cycleAnchor: "Start date",
+      cyclePlans: "Plans in rotation (checked order)", cyclePlansEmpty: "No plans yet — create one in the plan editor first.",
+      cycleNote: "Once enabled the schedule rolls by cycle: training days rotate through the chosen plans, rest days show a recovery card. The weekday binding is superseded while the cycle is on and returns when you disable it. Streak stats skip rest days — rest never breaks the chain.",
+      cycleDisable: "Disable cycle", cycleErrRange: "Training days must be 1-7, rest days 0-6",
+      cycleNeedPlans: "Pick at least one plan for the rotation", cycleSaved: "Schedule saved",
+      cycleDisabled: "Cycle disabled — weekday binding restored", restDay: "Rest day",
+      restHint: "Recovery is part of training: stretch, sleep, hydrate, walk. Pick a plan above for an extra session.",
       pickPlanPlaceholder: "— pick a plan to edit —",
       saveAsSuffix: " copy",
       bindWeekday: "Bind weekday (auto-switch to this plan weekly)", none: "Not bound",
@@ -252,6 +273,7 @@
       today: "Today",
       legendDone: "Done",
       legendToday: "Today",
+      legendRest: "Rest",
       streakLabel: "day streak",
       totalLabel: "days total",
       metroRailTitle: "Countdowns", metroAddTip: "Add timer",
@@ -433,6 +455,7 @@
     tick();
     if (calYear) renderCalendar(calYear, calMonth);
     paintStreak();
+    renderPlan();
     renderMeals(lastMealLogs);
     renderPills();
     if ($("plan-weekday") && $("plan-weekday").options.length) {
@@ -550,6 +573,8 @@
   // ---------- App state ----------
   let plans = {};
   let weekdayPlan = {};
+  let cycle = null;          // 练 N 休 M 滚动周期：{ anchor_date, train_days, rest_days, plan_names }
+  let restOverride = false;  // 休息日手动选了计划 = 临时加练，切日期后失效
   let currentDate = "";
   let currentPlan = "";
   let loaded = false;
@@ -1234,6 +1259,35 @@
     );
   }
 
+  /* 练 N 休 M 周期在某个日期的排程：返回 { rest:true } / { plan } / null。
+     锚点日当天 = 第 1 个训练日；锚点日之前周期不生效，回落到星期绑定。
+     训练日索引跨周期连续累加，所以「练二休一 + 推拉腿」会得到 推拉 | 休 | 腿推 | 休 …
+     这样每个计划出现的频率一致，不会某个计划永远挤在休息日前后。 */
+  function cycleInfoFor(iso) {
+    if (!cycle || iso < cycle.anchor_date) return null;
+    const rotation = cycle.plan_names.filter((n) => plans[n]);
+    if (!rotation.length) return null;
+    const span = cycle.train_days + cycle.rest_days;
+    const offset = isoDiffDays(cycle.anchor_date, iso);
+    const slot = offset % span;
+    if (slot >= cycle.train_days) return { rest: true };
+    const trainingIndex = Math.floor(offset / span) * cycle.train_days + slot;
+    return { plan: rotation[trainingIndex % rotation.length] };
+  }
+
+  // 某日期自动排程的计划；休息日返回 ""，未启用周期走星期绑定 + 就近回退。
+  function autoPlanFor(iso) {
+    const info = cycleInfoFor(iso);
+    if (info) return info.rest ? "" : usablePlan(info.plan);
+    const p = isoParts(iso);
+    return usablePlan(weekdayPlan[p.weekday]) || nearestPlanName(p) || "";
+  }
+
+  function isRestDate(iso) {
+    const info = cycleInfoFor(iso);
+    return !!info && info.rest;
+  }
+
   function populateSelect() {
     const sel = $("plan-select");
     sel.innerHTML = "";
@@ -1246,6 +1300,23 @@
     sel.value = currentPlan;
   }
 
+  // 休息日给下拉框一个「🛌 休息日」占位项（value=""），平时移除，避免出现空选项。
+  function syncRestPlaceholder(restDay) {
+    const sel = $("plan-select");
+    let opt = sel.querySelector('option[value=""]');
+    if (restDay) {
+      if (!opt) {
+        opt = document.createElement("option");
+        opt.value = "";
+        sel.prepend(opt);
+      }
+      opt.textContent = "\uD83D\uDECC " + t("restDay");
+      if (!currentPlan) sel.value = "";
+    } else if (opt) {
+      opt.remove();
+    }
+  }
+
   function renderPlan() {
     const itemsEl = $("items");
     const names = plans[currentPlan] || [];
@@ -1254,6 +1325,20 @@
     const future = currentDateIsFuture();
     document.querySelector(".workout-card").classList.toggle("locked", future);
     $("future-notice").style.display = future ? "block" : "none";
+
+    // 周期判定今天是休息日且用户没有手动选计划（= 临时加练）时，展示恢复卡片。
+    const restDay = isRestDate(currentDate) && !currentPlan;
+    const notice = $("rest-notice");
+    if (notice) notice.style.display = restDay ? "block" : "none";
+    syncRestPlaceholder(restDay);
+
+    if (restDay) {
+      // 提示文案只在上方 rest-notice 卡片里出现一次，列表区留空。
+      itemsEl.classList.add("empty");
+      $("progress").textContent = "0/0";
+      $("progress-bar-wrap").style.display = "none";
+      return;
+    }
 
     if (!names.length) {
       itemsEl.classList.add("empty");
@@ -2664,6 +2749,11 @@
         if (cell.date === todayISOStr) el.classList.add("today");
         if (cell.date === currentDate) el.classList.add("selected");
         if (calendarDates.has(cell.date)) el.classList.add("has-log");
+        // 周期休息日打上灰调标记，一眼看出哪天该歇。
+        if (isRestDate(cell.date)) {
+          el.classList.add("rest-day");
+          el.title = t("restDay");
+        }
         el.addEventListener("click", () => navigateToDate(cell.date));
       }
       row.append(el);
@@ -2673,12 +2763,10 @@
 
   function navigateToDate(iso) {
     currentDate = iso;
-    const p = isoParts(iso);
-    const plan = usablePlan(weekdayPlan[p.weekday]) || nearestPlanName(p);
-    if (plan) {
-      currentPlan = plan;
-      $("plan-select").value = plan;
-    }
+    // 切日期重新按排程走：休息日回到休息视图，之前的「临时加练」不跨天保留。
+    restOverride = false;
+    currentPlan = autoPlanFor(iso);
+    $("plan-select").value = currentPlan;
     syncDateLine();
     renderPlan();
     loadLogs();
@@ -2745,8 +2833,10 @@
   // ---------- Today ----------
   function goToday() {
     const todayParts = bjParts();
-    currentPlan = defaultPlanForToday(todayParts);
+    restOverride = false;
     currentDate = toISO(todayParts);
+    currentPlan = autoPlanFor(currentDate)
+      || (isRestDate(currentDate) ? "" : defaultPlanForToday(todayParts));
     $("plan-select").value = currentPlan;
     syncDateLine();
     renderPlan();
@@ -3583,13 +3673,103 @@
     applyPlansPayload(data);
   }
 
+  // ---------- 训练排程（练 N 休 M 滚动周期） ----------
+  function openCycleModal() {
+    if (!isLoggedIn) {
+      setStatus(t("needLoginEdit"), "error");
+      openAuthModal("signin");
+      return;
+    }
+    const box = $("cycle-plans");
+    box.innerHTML = "";
+    const names = Object.keys(plans);
+    if (!names.length) {
+      const empty = document.createElement("span");
+      empty.className = "cycle-empty";
+      empty.textContent = t("cyclePlansEmpty");
+      box.append(empty);
+    }
+    // 默认全选：首次配置时最常见的意图就是把手上所有计划都放进轮换。
+    const selected = new Set(cycle ? cycle.plan_names : names);
+    names.forEach((name) => {
+      const label = document.createElement("label");
+      label.className = "cycle-plan";
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.value = name;
+      cb.checked = selected.has(name);
+      label.append(cb, document.createTextNode(name));
+      box.append(label);
+    });
+    $("cycle-train").value = cycle ? cycle.train_days : 1;
+    $("cycle-rest").value = cycle ? cycle.rest_days : 1;
+    $("cycle-anchor").value = cycle ? cycle.anchor_date : todayISO();
+    $("cycle-disable").style.display = cycle ? "" : "none";
+    $("cycle-modal").showModal();
+  }
+
+  function cycleError(msg) {
+    setStatus(msg, "error");
+  }
+
+  async function saveCycle() {
+    const train = Number($("cycle-train").value);
+    const rest = Number($("cycle-rest").value);
+    const anchor = $("cycle-anchor").value;
+    if (!Number.isInteger(train) || !Number.isInteger(rest) ||
+        train < 1 || train > 7 || rest < 0 || rest > 6) {
+      cycleError(t("cycleErrRange"));
+      return;
+    }
+    const planNames = [...$("cycle-plans").querySelectorAll("input:checked")]
+      .map((cb) => cb.value);
+    if (!planNames.length) {
+      cycleError(t("cycleNeedPlans"));
+      return;
+    }
+    const res = await fetch("/api/plans/cycle", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ train_days: train, rest_days: rest, plan_names: planNames, anchor_date: anchor || null }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      cycleError(data.detail || t("saveFailed"));
+      return;
+    }
+    $("cycle-modal").close();
+    // 周期变了就清空手选，按新排程重解析今天/当前日期的视图。
+    restOverride = false;
+    currentPlan = "";
+    await reloadPlans();
+    reloadAll();
+    setStatus(t("cycleSaved"));
+  }
+
+  async function disableCycle() {
+    await fetch("/api/plans/cycle", { method: "DELETE" });
+    $("cycle-modal").close();
+    cycle = null;
+    restOverride = false;
+    currentPlan = "";
+    await reloadPlans();
+    reloadAll();
+    setStatus(t("cycleDisabled"));
+  }
+
   function applyPlansPayload(data) {
     plans = data.plans;
     weekdayPlan = data.weekday_plan || {};
+    cycle = data.cycle || null;
     defaultPlans = data.default_plans || {};
     // Runs before and after every plan reload: keep the current pick while it still
-    // exists, otherwise fall back to today's plan so the selector is never left blank.
-    currentPlan = usablePlan(currentPlan) || defaultPlanForToday(bjParts());
+    // exists, otherwise fall back to the schedule (cycle first, then weekday binding).
+    // 周期的保存 / 停用会把 currentPlan 清空，正好在这里按排程重新解析。
+    if (!usablePlan(currentPlan)) {
+      const refDate = currentDate || todayISO();
+      const auto = autoPlanFor(refDate);
+      currentPlan = auto || (isRestDate(refDate) ? "" : Object.keys(plans)[0] || "");
+    }
     populateSelect();
   }
 
@@ -3962,6 +4142,40 @@
     redrawBodyChart();
   }
 
+  /* 密码框右侧的小眼睛：点击在明文 / 密文之间切换。
+     页面上所有 type="password"（登录、注册、重置、设置改密）统一在这里挂载，
+     新增密码框时不用重复写结构。 */
+  const EYE_ICONS = {
+    show: '<path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12Z" /><circle cx="12" cy="12" r="2.7" />',
+    hide: '<path d="m3 3 18 18" /><path d="M10.6 5.2A10 10 0 0 1 12 5.5c6.5 0 10 6.5 10 6.5a17.5 17.5 0 0 1-3.2 4M6.7 6.7A16.7 16.7 0 0 0 2 12s3.5 6.5 10 6.5a10 10 0 0 0 4.2-.9" /><path d="M9.9 9.9a2.7 2.7 0 0 0 3.8 3.8" />',
+  };
+
+  function setupPasswordEyes() {
+    document.querySelectorAll('input[type="password"]').forEach((inp) => {
+      if (inp.parentElement.classList.contains("pwd-wrap")) return;
+      const wrap = document.createElement("span");
+      wrap.className = "pwd-wrap";
+      inp.before(wrap);
+      wrap.append(inp);
+      const eye = document.createElement("button");
+      eye.type = "button";
+      eye.className = "pwd-eye";
+      eye.setAttribute("aria-label", t("pwdShow"));
+      eye.innerHTML =
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+        'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + EYE_ICONS.show + "</svg>";
+      eye.addEventListener("click", () => {
+        const show = inp.type === "password";
+        inp.type = show ? "text" : "password";
+        eye.querySelector("svg").innerHTML = EYE_ICONS[show ? "hide" : "show"];
+        eye.setAttribute("aria-label", t(show ? "pwdHide" : "pwdShow"));
+        eye.classList.toggle("shown", show);
+        inp.focus();
+      });
+      wrap.append(eye);
+    });
+  }
+
   function bindStaticUI() {
     setupBody();
     setupTimerRail();
@@ -4010,7 +4224,12 @@
       btn.addEventListener("click", goToday);
     });
 
-    $("plan-edit-btn").addEventListener("click", openPlanModal);
+    // 编辑计划入口住在排程弹窗里：先收起排程，再打开计划编辑器。
+    $("plan-edit-btn").addEventListener("click", () => {
+      $("cycle-modal").close();
+      openPlanModal();
+    });
+    $("cycle-btn").addEventListener("click", openCycleModal);
     // 新建与「编辑当前计划」是两件事：先确认放弃未保存改动，再切到空白模式。
     $("plan-new-btn").addEventListener("click", () => {
       if (planHasChanges() && !confirm(t("confirmDiscard"))) return;
@@ -4041,8 +4260,27 @@
       if (e.target === e.currentTarget) tryClosePlanModal();
     });
 
+    // ---------- 训练排程弹窗 ----------
+    document.querySelectorAll(".cycle-preset").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        $("cycle-train").value = btn.dataset.train;
+        $("cycle-rest").value = btn.dataset.rest;
+      });
+    });
+    $("cycle-save").addEventListener("click", saveCycle);
+    $("cycle-disable").addEventListener("click", disableCycle);
+    $("cycle-cancel").addEventListener("click", () => $("cycle-modal").close());
+    $("cycle-close").addEventListener("click", () => $("cycle-modal").close());
+    $("cycle-modal").addEventListener("click", (e) => {
+      if (e.target === e.currentTarget) $("cycle-modal").close();
+    });
+
+    setupPasswordEyes();
+
     $("plan-select").addEventListener("change", (e) => {
       currentPlan = e.target.value;
+      // 休息日里手动选了计划 = 临时加练，不影响周期序列；选回「休息日」占位即恢复。
+      restOverride = currentPlan !== "";
       renderPlan();
       loadLogs();
     });

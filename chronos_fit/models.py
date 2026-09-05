@@ -148,6 +148,23 @@ class Plan(Base):
     weekday: Mapped[str | None] = mapped_column(String(10))
 
 
+class WorkoutCycle(Base):
+    """练 N 休 M 的滚动排程：anchor_date 起每天一个槽位，前 train_days 天是训练日、
+    之后 rest_days 天休息；训练日在 plan_names（JSON 数组，即轮换顺序）里循环取计划。
+    星期绑定与周期互斥——启用周期时前端以周期为准，停用后回落到星期绑定。"""
+
+    __tablename__ = "workout_cycles"
+    __table_args__ = (UniqueConstraint("user_id", name="uq_workout_cycles_key"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(Integer, nullable=False, default=ANONYMOUS_UID)
+    anchor_date: Mapped[str] = mapped_column(String(10), nullable=False)
+    train_days: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    rest_days: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    plan_names: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
+    updated_at: Mapped[str] = mapped_column(String(32), nullable=False)
+
+
 class TickerItem(Base):
     __tablename__ = "ticker_items"
 

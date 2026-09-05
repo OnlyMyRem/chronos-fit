@@ -12,7 +12,7 @@ from fastapi.responses import Response
 from sqlalchemy import distinct, select
 from sqlalchemy.orm import Session
 
-from ..models import BodyLog, CustomItem, MealItem, WorkoutLog
+from ..models import BodyLog, CustomItem, MealItem, WorkoutCycle, WorkoutLog
 from ..services.time_utils import now_bj, now_iso
 from .deps import AppConfig, CurrentUid, DbSession
 
@@ -53,6 +53,9 @@ def checkin_streak(session: DbSession, uid: CurrentUid):
 
     连续天数以「今天或昨天」为锚点：今天还没打卡时不算断，这样白天查看日历
     不会看到 streak 突然归零。
+    启用了练 N 休 M 周期时休息日完全透明——既不算断也不计入连续，休息是
+    计划的一部分，不该被惩罚；未启用周期时 is_rest 恒为 False，逐日推进
+    与旧的「相邻才算连续」完全等价。
     """
     dates: set[str] = set()
     for model in (WorkoutLog, CustomItem, MealItem):
@@ -65,21 +68,55 @@ def checkin_streak(session: DbSession, uid: CurrentUid):
         )
 
     total = len(dates)
-    best = current = 0
-    run = 0
-    prev = None
-    for day in sorted(_parse_date(d) for d in dates):
-        run = run + 1 if prev and (day - prev).days == 1 else 1
-        prev = day
-        best = max(best, run)
+    cycle = _cycle_row(session, uid)
+    logged = {_parse_date(d) for d in dates}
 
-    today = now_bj().date()
-    anchor = today if today.isoformat() in dates else today - timedelta(days=1)
-    while anchor.isoformat() in dates:
-        current += 1
-        anchor -= timedelta(days=1)
+    def is_rest(day: date) -> bool:
+        if cycle is None:
+            return False
+        try:
+            anchor = _parse_date(cycle.anchor_date)
+        except ValueError:
+            return False
+        offset = (day - anchor).days
+        if offset < 0:
+            return False
+        return offset % (cycle.train_days + cycle.rest_days) >= cycle.train_days
+
+    best = current = run = 0
+    if logged:
+        day = min(logged)
+        while day <= max(logged):
+            if is_rest(day):
+                pass  # 休息日透明：不涨也不清零
+            elif day in logged:
+                run += 1
+                best = max(best, run)
+            else:
+                run = 0
+            day += timedelta(days=1)
+
+        # 今天没打卡时从昨天起算（白天查看不会突然归零），途中的休息日跳过。
+        walk = now_bj().date()
+        if walk not in logged:
+            walk -= timedelta(days=1)
+        while walk >= min(logged):
+            if is_rest(walk):
+                walk -= timedelta(days=1)
+                continue
+            if walk in logged:
+                current += 1
+                walk -= timedelta(days=1)
+            else:
+                break
 
     return {"current": current, "best": best, "total": total}
+
+
+def _cycle_row(session: DbSession, uid: int):
+    if uid == 0:
+        return None
+    return session.scalar(select(WorkoutCycle).where(WorkoutCycle.user_id == uid))
 
 
 def _parse_date(value: str) -> date:
