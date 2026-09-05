@@ -68,21 +68,15 @@ pip install dist/chronos_fit-*.whl
 
 ### 发布到 PyPI
 
-PyPI 项目名为 **chronos-fit**（导入名 `chronos_fit`，命令 `chronos-fit`）。日常发布走仓库根的 `release.sh`，一条命令完成改版本号 → 构建 wheel → 上传 PyPI → commit + push：
-
-```bash
-./release.sh                        # 交互式：先打印当前版本，再问新版本号与 commit message
-./release.sh 3.5.0 "英文一行说明"    # 免交互
-./release.sh --dry-run 3.5.0 "..."   # 只预演不执行
-```
-
-脚本会拒绝与当前版本相同、比当前版本更低、或 PyPI 上已存在的版本号（PyPI 永不允许覆盖同一版本）。
-
-在 pypi.org 注册账号并创建 API token 后，也可以手工分步执行：
+PyPI 项目名为 **chronos-fit**（导入名 `chronos_fit`，命令 `chronos-fit`）。在 pypi.org 注册账号并创建 API token 后，手工分步执行：
 
 ```bash
 pip install twine
+# 1. 改 chronos_fit/__init__.py 里的 __version__（PyPI 永不允许覆盖同一版本号）
+# 2. 构建 wheel（改完版本号再构建）
 ./build_wheel.sh
+# 3. 校验并上传
+python -m twine check dist/*
 twine upload dist/*           # 提示 Username 填 __token__，Password 填 token
 ```
 

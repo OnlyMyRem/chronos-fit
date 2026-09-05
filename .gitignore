@@ -25,3 +25,6 @@ data/*
 dist/
 build/
 *.egg-info/
+
+# local release helper
+release.sh
