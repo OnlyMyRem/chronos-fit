@@ -3004,11 +3004,11 @@
     try {
       const res = await fetch("/api/metronomes");
       const rows = await res.json();
-      // Entering the page starts every timer fresh — that is the point of the rail.
-      // The server only stores the duration, so a paused timer comes back paused at full.
+      // 进入页面全部从头开跑——侧栏计时器的意义就是打开即用。
+      // 服务器只存时长，暂停 / 启用状态不跨会话保留，回来一律重新计时。
       timers = rows.map((row) => {
         const total = row.duration_sec * 1000;
-        return { ...row, endsAt: Date.now() + total, pausedRemain: row.enabled ? 0 : total, flashUntil: 0 };
+        return { ...row, enabled: 1, endsAt: Date.now() + total, pausedRemain: 0, flashUntil: 0 };
       });
     } catch {
       timers = [];
